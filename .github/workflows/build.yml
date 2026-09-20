@@ -107,6 +107,5 @@ jobs:
         with:
           name: YawStar_U-Tube_Downloader-Linux-Packages
           path: |
-            dist/YawStar_U-Tube_Downloader/
-            dist/*.deb
-            dist/*.AppImage
+            dist/
+          if-no-files-found: error
