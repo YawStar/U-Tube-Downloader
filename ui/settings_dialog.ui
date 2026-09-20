@@ -1,0 +1,1203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PreferencesDialog</class>
+ <widget class="QDialog" name="PreferencesDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>680</width>
+    <height>628</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="spacing">
+    <number>12</number>
+   </property>
+   <property name="leftMargin">
+    <number>15</number>
+   </property>
+   <property name="topMargin">
+    <number>15</number>
+   </property>
+   <property name="rightMargin">
+    <number>15</number>
+   </property>
+   <property name="bottomMargin">
+    <number>15</number>
+   </property>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="tab_general">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="generalVLayout">
+       <item>
+        <widget class="QGroupBox" name="gp_Language">
+         <property name="title">
+          <string>Language</string>
+         </property>
+         <layout class="QHBoxLayout" name="langHLayout">
+          <item>
+           <widget class="QLabel" name="lblLang">
+            <property name="text">
+             <string>Language:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="combo_Language">
+            <property name="minimumSize">
+             <size>
+              <width>250</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="langSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupAutomation">
+         <property name="title">
+          <string>Automation</string>
+         </property>
+         <layout class="QVBoxLayout" name="autoVLayout">
+          <item>
+           <widget class="QCheckBox" name="chk_add_clipboard_auto">
+            <property name="text">
+             <string>Add links from clipboard automatically</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chk_start_download_auto">
+            <property name="text">
+             <string>Start download automatically</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chk_remove_completed_auto">
+            <property name="text">
+             <string>Remove completed automatically</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chk_play_after_downloaded_auto">
+            <property name="text">
+             <string>Play media after downloaded</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chk_minimize_to_tray">
+         <property name="text">
+          <string>Minimize to system tray on close</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groutNotification">
+         <property name="title">
+          <string>Notifications</string>
+         </property>
+         <layout class="QHBoxLayout" name="notifHLayout">
+          <item>
+           <widget class="QCheckBox" name="chk_notify_fetched">
+            <property name="text">
+             <string>fetched</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chk_notify_download_started">
+            <property name="text">
+             <string>started</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chk_notify_download_completed">
+            <property name="text">
+             <string>completed</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="notifSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupAppUpdates">
+         <property name="title">
+          <string>Application Updates</string>
+         </property>
+         <layout class="QHBoxLayout" name="updatesHLayout">
+          <item>
+           <widget class="QCheckBox" name="chk_auto_update">
+            <property name="text">
+             <string>Check for updates automatically</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="updateSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_check_update">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Check Now</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="generalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_download">
+      <attribute name="title">
+       <string>Download</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="downloadLayout">
+       <item>
+        <widget class="QGroupBox" name="groupPreferences">
+         <property name="title">
+          <string>Preferred Quality &amp; Formats</string>
+         </property>
+         <layout class="QGridLayout" name="prefGrid">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_pref_res">
+            <property name="text">
+             <string>Preferred resolution:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="combo_pref_res">
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>4320</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2160</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1440</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1080</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>720</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>480</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>360</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>240</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>144</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="chk_pref_fps">
+            <property name="text">
+             <string>Prefer a higher framerate</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_pref_vcontainer">
+            <property name="text">
+             <string>Preferred video container:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="combo_pref_vcontainer">
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mp4</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>webm</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mkv</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="lbl_pref_acontainer">
+            <property name="text">
+             <string>Preferred audio container:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QComboBox" name="combo_pref_acontainer">
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>m4a</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mp3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ogg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>webm</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>flac</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>opus</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lbl_pref_vcodec">
+            <property name="text">
+             <string>Preferred video codec:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="combo_pref_vcodec">
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>av01</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>vp9.2</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>vp9</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>h265</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>h264</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>vp8</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>h263</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>theora</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="lbl_pref_acodec">
+            <property name="text">
+             <string>Preferred audio codec:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QComboBox" name="combo_pref_acodec">
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>flac</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>alac</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>wav</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>aiff</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>opus</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>vorbis</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>aac</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mp4a</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mp3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>eac3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ac3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>dts</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupPaths">
+         <property name="title">
+          <string>Download Folders</string>
+         </property>
+         <layout class="QGridLayout" name="pathsGrid">
+          <item row="0" column="0">
+           <widget class="QLineEdit" name="inp_dowload_path"/>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="btn_BrowsePath">
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Choose</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupTemplate">
+         <property name="title">
+          <string>Output File &amp; Playlist Templates</string>
+         </property>
+         <layout class="QGridLayout" name="templateGrid">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lbl_output_template">
+            <property name="text">
+             <string>Output template:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="inp_output_template">
+            <property name="text">
+             <string>%(title)s.%(ext)s</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="btn_reset_output_template">
+            <property name="text">
+             <string>Reset to default</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_playlist_indexing">
+            <property name="text">
+             <string>Playlist indexing:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="inp_playlist_indexing">
+            <property name="text">
+             <string>%(playlist_index)s - </string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="btn_reset_playlist_indexing">
+            <property name="text">
+             <string>Reset to default</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QCheckBox" name="chk_pad_playlist_index">
+            <property name="text">
+             <string>Pad the indexed filenames with zeroes</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="chk_playlist_own_folders">
+            <property name="text">
+             <string>Put playlists in their own folders</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupLimits">
+         <property name="title">
+          <string>Speed &amp; Simultaneous Limits</string>
+         </property>
+         <layout class="QGridLayout" name="limitsGrid">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblSimultaneous">
+            <property name="text">
+             <string>Simultaneous downloads:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spin_Simultaneous">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="chk_speed_limit">
+            <property name="text">
+             <string>Global bandwidth limit:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="spin_speed_limit">
+            <property name="suffix">
+             <string> KB/s</string>
+            </property>
+            <property name="maximum">
+             <number>999999</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chk_forceOverwrite">
+         <property name="text">
+          <string>Force overwrite existing file</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chk_awakeMode">
+         <property name="text">
+          <string>Prevent from sleep  while downloading</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="downloadSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_network">
+      <attribute name="title">
+       <string>Network</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="networkVLayout">
+       <item>
+        <widget class="QGroupBox" name="groupProxy">
+         <property name="title">
+          <string>Proxy Server Settings</string>
+         </property>
+         <layout class="QGridLayout" name="proxyGrid">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="chk_use_proxy">
+            <property name="text">
+             <string>Use Proxy Server</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="lblProxyType">
+            <property name="text">
+             <string>Proxy Type:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QComboBox" name="combo_proxy_type">
+            <item>
+             <property name="text">
+              <string>HTTP</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>HTTPS</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SOCKS5</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblProxyHost">
+            <property name="text">
+             <string>Address / Host:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="inp_proxy_host"/>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="lblProxyPort">
+            <property name="text">
+             <string>Port:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QSpinBox" name="spin_proxy_port">
+            <property name="maximum">
+             <number>65535</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lblProxyUser">
+            <property name="text">
+             <string>Username:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="inp_proxy_user"/>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="lblProxyPass">
+            <property name="text">
+             <string>Password:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLineEdit" name="inp_proxy_pass">
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupConnRetries">
+         <property name="title">
+          <string>Connection &amp; Retries</string>
+         </property>
+         <layout class="QGridLayout" name="connGrid">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblSocketTimeout">
+            <property name="text">
+             <string>Socket Timeout (seconds):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spin_socket_timeout">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>300</number>
+            </property>
+            <property name="value">
+             <number>30</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="lblMaxRetries">
+            <property name="text">
+             <string>Max Retries:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QSpinBox" name="spin_max_retries">
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBandwidthGeo">
+         <property name="title">
+          <string>Bandwidth &amp; Geo-Restriction</string>
+         </property>
+         <layout class="QHBoxLayout" name="geoHLayout">
+          <item>
+           <widget class="QLabel" name="lblGeoBypass">
+            <property name="text">
+             <string>Geo Verification / Bypass Country Code:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="inp_geo_bypass_country">
+            <property name="maxLength">
+             <number>3</number>
+            </property>
+            <property name="placeholderText">
+             <string>e.g., US, GB, JP</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="networkSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_Cookies">
+      <attribute name="title">
+       <string>Cookies</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="cookiesMainLayout">
+       <item>
+        <layout class="QHBoxLayout" name="cookiesButtonsLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="btnNone">
+           <property name="text">
+            <string>None</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnManual">
+           <property name="text">
+            <string>Manual Input</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnCookieFile">
+           <property name="text">
+            <string>Cookie file</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnFromBrowser">
+           <property name="text">
+            <string>From Browser</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="cookieBtnSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QWidget" name="container_manual" native="true">
+         <layout class="QVBoxLayout" name="manualLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QTextEdit" name="txt_manual_cookie">
+            <property name="placeholderText">
+             <string>Paste NetScape format cookie content...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="manualBtnLayout">
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <item>
+             <spacer name="manualSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_paste_clipboard">
+              <property name="minimumSize">
+               <size>
+                <width>140</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Paste from Clipboard</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_save_manual">
+              <property name="minimumSize">
+               <size>
+                <width>90</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Save</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="container_cookie_file" native="true">
+         <layout class="QHBoxLayout" name="fileLayout">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="inp_cookies_path"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_browse_cookies">
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Select</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="container_browser" native="true">
+         <layout class="QVBoxLayout" name="browserLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_browser_warning">
+            <property name="styleSheet">
+             <string notr="true">background-color: #3d2b00; color: #ffca28; border: 1px solid #ffb300; border-radius: 6px; padding: 10px;</string>
+            </property>
+            <property name="text">
+             <string>⚠️ yt-dlp reads the browser database directly. This can fail with Chromium browsers on Windows due to locking or encryption; the browser extension is recommended.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="combo_browser"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupCookieStatus">
+         <property name="title">
+          <string>Status &amp; Quick Tools</string>
+         </property>
+         <layout class="QVBoxLayout" name="cookieStatusVLayout">
+          <item>
+           <widget class="QLabel" name="lbl_cookie_status">
+            <property name="text">
+             <string>Status: No active cookie loaded.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="cookieToolsHLayout">
+            <item>
+             <widget class="QPushButton" name="btn_get_cookie_ext">
+              <property name="minimumSize">
+               <size>
+                <width>160</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Get Cookie Extension</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="cookieToolSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_clear_cookies">
+              <property name="minimumSize">
+               <size>
+                <width>140</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Clear Stored Cookies</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="cookiesBottomSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="bottomButtonsLayout">
+     <property name="spacing">
+      <number>10</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="btn_restore">
+       <property name="minimumSize">
+        <size>
+         <width>130</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Restore Defaults</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="bottomSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_save">
+       <property name="minimumSize">
+        <size>
+         <width>110</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Save Changes</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_cancel">
+       <property name="minimumSize">
+        <size>
+         <width>90</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

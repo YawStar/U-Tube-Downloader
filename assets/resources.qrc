@@ -1,0 +1,44 @@
+<RCC>
+  <qresource prefix="fonts">
+    <file>fonts/pyidaungsu.ttf</file>
+    <file>fonts/yawstar_ui.ttf</file>
+    <file>fonts/zawgyione2008.ttf</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>icons/app_icon.ico</file>
+    <file>icons/about.ico</file>
+    <file>icons/completed.ico</file>
+    <file>icons/downloading.ico</file>
+    <file>icons/error.ico</file>
+    <file>icons/history.ico</file>
+    <file>icons/exec.ico</file>
+    <file>icons/info.ico</file>
+    <file>icons/waiting.ico</file>
+  </qresource>
+  <qresource prefix="images">
+    <file>images/about.svg</file>
+    <file>images/bug_report.svg</file>
+    <file>images/chapters.svg</file>
+    <file>images/default_thumbnail.jpg</file>
+    <file>images/download.svg</file>
+    <file>images/fetch_Info.svg</file>
+    <file>images/formats.svg</file>
+    <file>images/github.svg</file>
+    <file>images/globe.svg</file>
+    <file>images/groups.svg</file>
+    <file>images/heart.svg</file>
+    <file>images/heart_pink.svg</file>
+    <file>images/license.svg</file>
+    <file>images/loading.gif</file>
+    <file>images/m_time.svg</file>
+    <file>images/mail.svg</file>
+    <file>images/metadata.svg</file>
+    <file>images/open_folder.svg</file>
+    <file>images/paste.svg</file>
+    <file>images/qt_dark.svg</file>
+    <file>images/settings.svg</file>
+    <file>images/subtitles.svg</file>
+    <file>images/thumbnail.svg</file>
+    <file>images/translate.svg</file>
+  </qresource>
+</RCC>

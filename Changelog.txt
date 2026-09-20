@@ -1,0 +1,94 @@
+version 1.0.0.13
+{+} Fetch Information နှိပ်လိုက်ရင် urlInput, pasteButton, Fetch Information button, Down Look Now တို့ကို Disable လုပ်
+{+} Fetch Information နှိပ်လိုက်ရင် Loading GIF ပြ
+{+} set_control_enabled method အသစ် ထည့်
+{+} Fetch Information နှိပ်လိုက်ရင် ကျန်တာတွေကို ပိတ်ထားပေမယ့် Open Download Folder  ကို တော့ ဖွင့်ပေးထား
+{+} Stop Fetching Infomation feature ထည့်
+{+} Deno ကိုအသုံးပြုတဲ့ Feature ထည့်
+{+} Down Look Now  နဲ့ Download လုပ်နေတဲ့အချိန် Stop Download feature ကို ထည့်
+{+} Paste လုပ်ပြီးတာနဲ့ Fetch Information တန်းလုပ်တဲ့ feature ထည့်
+{+} Desktop Notifyer feature ထပ်ထည့်
+{+} get_video_info ကို iOS ပုံစံလုပ်ပြီး Info တောင်းတဲ့ပုံစံပြောင်းလဲ. yt-dlp က ပထမဦးဆုံး iOS client နဲ့ ဗီဒီယိုဆီ ချဉ်းကပ်ပြီး Block တာကို ကျော်ပါမယ်
+{+} Status output ကို သေချာလှအောင်ပြောင်းလဲ (ansi character တွေဖြုတ်)
+{^} Fetch Info လုပ်တဲ့အခါ အရင် Info အဟောင်းတွေကို Reset ချတဲ့ logic ထည့်
+{*} DownloadThread ကို Native မှ SubProcess သို့ပြောင်းလဲ
+
+version 1.0.0.14
+{^} SubProcess မှ ပိုကောင်းတဲ့ QProcess ကိုပြောင်းလဲ(Converted to Native QProcess System - Fully Verified)
+{+} Fetch Info, Stop Fetching Info, Download, Stop Download အားလုံးကို Native QProcess ဖြင့် အစားထိုးပြီးစီး။
+{+} Download လုပ်နေစဉ်တွင် ထွက်ပေါ်လာတဲ့ output ကို txtInfolog တွင်ပြသပြီး Download ပြီးသွားရင် မူလ Description ကိုပြန်ပြပေး
+
+version 1.0.0.15
+{+} Snap to Edges" (သို့မဟုတ်) "Magnet Window" Feature ထည့်သွင်း
+
+version 1.0.0.16
+{+} Thumbnail ကို AcpectRatio ကို Ignore ပုံစံပြောင်း
+{+} txtInfoLog ထဲက link တွေကို link ပုံစံဖြစ်အောင်ပြောင်း
+{+} App Setting ကို  App Path မှာထည့်သွင်း
+{+} Marquee progressbar ထည့်သွင်း
+{+} Open Folder ကို နှိပ်ရင် Download လုပ်ထားပြီးသားဖိုင်ကို Select လုပ်ထားပြီးဖွင့်ပေး
+
+version 1.0.0.17
+{+} Cookie Grabber Windows နဲ့ Feature ထည့်
+
+version 1.0.0.18
+{+} Config မှ cookies path ကိုကြည့်ပြီး Fetch လုပ်တဲ့နေရာမှာ အသုံးပြု
+{+} Config မှ အချက်အလက်တွေကို ဖတ်ပြီး Download လုပ်ရာမှာ အသုံးပြု
+{+} Open Folder ကို နှိပ်ရာတွင် Config မှ အချက်အလက်ကို ဖတ်ပြီး အလုပ်လုပ်
+
+version 1.0.0.20
+{+} desktop_notifier နှင့် plyer တို့ကို ဖြုတ်ပြီး QSystemTrayIcon ကိုပြောင်းလဲ
+{+} Download လုပ်ပြီး Notify ပြတဲ့အခါ နှိပ်လိုက်ရင် Download File ကို Select လုပ်ပြီးပြပေး
+{+} Notification Area မှာ Main_Icon နဲ့ ပြပေး
+{+} Past နှိပ်ပါက URL က Valid ဖြစ်သလား စစ်ပြီးမှ Input ထဲသွင်း
+
+version 1.0.0.21
+{+} Open Folder လုပ်ရာတွင် Opened ထားပြီးသား Shell ကို အသုံးပြု
+{+} Format Selection Dialog ထည့်သွင်းပြီး စိတ်ကြိုက်ရွေးချယ်နိုင်
+{+} Preference Dialog (Settings) ထည့်သွင်း အသုံးပြု
+
+version 1.0.0.22
+{+} Application ကို Close တဲ့အခါ Notification မှာ run နေတဲ့ feature ထည့်
+{+} Clipboard Monitoring feature ထည့်သွင်း
+
+version 1.0.0.25
+{+} Application ကို Close တဲ့အခါ Notification မှာ run နေတဲ့ feature ထည့်
+{+} Clipboard Monitoring feature ထည့်သွင်း
+
+version 1.0.0.26
+{+} Download လုပ်နေတုန်း Close လုပ်ရင် Config ကိုကြည့်ပြီး Tray ကို အလုပ်လုပ်
+{^} Download လုပ်နေတာ သို့မဟုတ် Fetching လုပ်နေမှ Close လုပ်တဲ့အခါ Tray Message ပြ
+{^} Argument မှ Progressbar Template ကို "" ထည့်၊ (Download Error မဖြစ်အောင်)
+{+} Single Instance Feature ကို ထည့်သွင်း
+{+} Preference မှာ Restore Default လုပ်ရင် Cookies settings ကိုပါ Default လုပ်တဲ့ Feature ထည့်
+
+version 1.0.0.27
+{*} Download လုပ်တဲ့အခါ log ပြသ
+{^} preferences_dialog က cookies ကို အဆင့်မြှင့်
+{+} Preferences_dialog က cookies မှာ inputbox နဲ့ button တွေ ထပ်တိုး
+{*} Download Args မှာ Title က စာလုံး 50 ထက်ပိုမယူအောင် လုပ်
+{*} Cookies Type တွေ (None, File, Manual, Browser) တို့ကို Logic တွေထည့်သွင်း
+
+version 1.0.0.28
+{+} iTaskbar Feature ထည့်သွင်း
+{+} iTaskbar မှာ Status Icon တွေကို ထည့်သွင်း
+{-} useCookie Button ကိုဖြုတ် (Preference မှသာပြောင်းလဲစေ)
+{+} Modify Time နဲ့ Modify Time မသုံးတဲ့ Button ထည့်သွင်း
+{+} Dependency Downloader GUI ပြီးသွားရင် Auto 5 Seconds ပြပြီး ပိတ်သွား‌အောင်လုပ်
+{+} Python Standard Naming Conventions (PEP 8) ဖြစ်အောင် အကုန် small latter ပြောင်း
+{^} Single Instance Feature ကို Signleton သို့ အဆင့်မြှင့်
+{+} About window ကို ထည့်သွင်း
+
+version 1.0.0.29
+{+} Thumbnail ကို Save နိုင်တဲ့ Feature ထည့်သွင်း
+{+} Download ပြီးတာနဲ့ Auto Play နိုင်တဲ့ Feature ထည့်သွင်း
+{+} wakepy module ထည့်ပြီး Computer ကို Sleep မဖြစ်အောင် ထိန်းတဲ့ Feature ထည့်သွင်း
+{+} Fetching နဲ့ Download Button တို့ကို Working State ထည့်
+{+} Uploader link provided ထည့်သွင်း
+{+} URL Clear button ထည့်သွင်း
+{+} Log System ကိုထည့်သွင်း
+{+} Embedded and load Pyidaungsu font
+{+} Tray Menu အသစ်တွေထည့်သွင်း၊ UI နဲ့ Sync လုပ်
+{*} Cookies Requiremet Message Bug ကို ပြင်ဆင်
+{+} Settings မှာ Feature အသစ်တွေ ထည့်သွင်း
+{+} Url History Feature ထည့်သွင်း

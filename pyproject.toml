@@ -1,0 +1,20 @@
+[project]
+name = "yawstar-u-tube-downloader"
+version = "1.0.0.29"
+description = "Advanced video downloader GUI (PySide6) that drives the yt-dlp binary via QProcess"
+readme = "README.md"
+requires-python = ">=3.13.13"
+dependencies = [
+    "desktop-notifier>=6.2.0",
+    "niquests>=3.21.1",
+    "psutil>=7.2.2",
+    "pyside6>=6.11.2",
+    "pywin32>=312; sys_platform == 'win32'",
+    "requests>=2.34.2",
+    "wakepy>=1.0.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "test",
+]

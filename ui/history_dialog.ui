@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>HistoryDialog</class>
+ <widget class="QDialog" name="HistoryDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>450</width>
+    <height>350</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>URL History</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../assets/resources.qrc">
+    <normaloff>:/icons/icons/history.ico</normaloff>:/icons/icons/history.ico</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog { background-color: #161616; }
+QWidget { color: #ffffff; font-family: &quot;Pyidaungsu&quot;; font-size: 10pt; }
+QLineEdit { background-color: #111111; border: 1px solid #444444; border-radius: 4px; padding: 6px; color: #ffffff; }
+QLineEdit:focus { border: 1px solid #00A2FF; }
+QListWidget { background-color: #111111; border: 1px solid #444444; border-radius: 4px; padding: 5px; color: #ffffff; }
+QListWidget::item { padding: 6px; border-bottom: 1px solid #222222; }
+QListWidget::item:hover { background-color: #222C36; }
+QListWidget::item:selected { background-color: #00A2FF; color: #ffffff; }
+QPushButton { background-color: #ffffff; color: #161616; border: 1px solid #ffffff; border-radius: 4px; padding: 6px 14px; font-weight: bold; }
+QPushButton:hover { background-color: #00A2FF; color: #ffffff; border: 1px solid #00A2FF; }
+QPushButton:pressed { background-color: #cccccc; }
+QPushButton#btnClearHistory { background-color: #D34507; color: #ffffff; border: 1px solid #D34507; }
+QPushButton#btnClearHistory:hover { background-color: #FF4E00; border: 1px solid #FF4E00; }</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>10</number>
+   </property>
+   <property name="leftMargin">
+    <number>15</number>
+   </property>
+   <property name="topMargin">
+    <number>15</number>
+   </property>
+   <property name="rightMargin">
+    <number>15</number>
+   </property>
+   <property name="bottomMargin">
+    <number>15</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="searchLayout">
+     <item>
+      <widget class="QLineEdit" name="txtSearch">
+       <property name="placeholderText">
+        <string>Search history...</string>
+       </property>
+       <property name="clearButtonEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QListWidget" name="listHistory"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonLayout">
+     <property name="spacing">
+      <number>8</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="btnClearHistory">
+       <property name="text">
+        <string>Clear History</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnSelect">
+       <property name="text">
+        <string>Select</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../assets/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

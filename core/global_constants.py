@@ -1,0 +1,17 @@
+# global_constants.py
+
+COMPANY_NAME = "YawStar"
+AUTHOR = "YawHackka"
+APP_NAME = "YawStar U-Tube Downloader"
+APP_RELEASED_DATE = "20/Sept/2026"
+APP_VERSION = "1.0.0.29"
+APP_DATA_PATH = "/var/data/app"
+APP_CONFIG_PATH = "/etc/app/config.json"
+MAIL = "yawstar.2009@gmail.com"
+YS_BLOG_URL = "https://yawstar.blogspot.com"
+DONATE_URL = "https://yawstardancebox.github.io/donate/"
+GITHUB_REPO_URL = "https://github.com/YawStar/U-Tube-Downloader"
+GITHUB_PROFILE_URL = "https://github.com/YawStar"
+FACEBOOK_URL = "https://www.facebook.com/hackka.yaw"
+YOUTUBE_URL = "https://www.youtube.com/@yawstar8676"
+TELEGRAM_URL = "https://t.me/YawHackka"
