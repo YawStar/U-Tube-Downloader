@@ -26,20 +26,87 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
-      # 4. UPX Latest တပ်ဆင်ခြင်း
-      - name: Install UPX
+      # 4. UPX နှင့် AppImage Tool များအတွက် လိုအပ်သော Packages များ တပ်ဆင်ခြင်း
+      - name: Install Dependencies & Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y upx
+          sudo apt-get install -y upx dpkg-dev wget
+          
+          # appimagetool ဒေါင်းလုဒ်လုပ်ခြင်း
+          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          sudo mv appimagetool /usr/local/bin/
 
-      # 5. Build Script ကို Run ခြင်း
+      # 5. Build Script ကို Run ခြင်း (Binary ဖိုင် ထွက်လာမည်)
       - name: Run build script
         run: |
           uv run python build.py
 
-      # 6. ထွက်လာသည့် Binary / Folder ကို Download ယူနိုင်ရန် Upload တင်ခြင်း
-      - name: Upload Build Artifact
+      # 6. .deb Package ဖန်တီးခြင်း
+      - name: Build .deb Package
+        run: |
+          # DEBIAN Directory Structure ဆောက်ခြင်း
+          mkdir -p deb_build/DEBIAN
+          mkdir -p deb_build/usr/local/bin
+          
+          # Executable Binary ကို ရွှေ့ခြင်း
+          # (dist/ ထဲမှ ထွက်လာသော binary ဖိုင်အမည်ကို YawStar_U-Tube_Downloader ဟု စံပြုယူဆထားပါသည်)
+          cp dist/YawStar_U-Tube_Downloader/YawStar_U-Tube_Downloader deb_build/usr/local/bin/yawstar-downloader
+          chmod +x deb_build/usr/local/bin/yawstar-downloader
+
+          # Control File ဖန်တီးခြင်း
+          cat <<EOF > deb_build/DEBIAN/control
+          Package: yawstar-tube-downloader
+          Version: 1.0.0
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: YawStar
+          Description: YawStar U-Tube Downloader Application
+          EOF
+
+          # .deb ဖိုင် Build လုပ်ခြင်း
+          dpkg-deb --build deb_build dist/YawStar_U-Tube_Downloader_1.0.0_amd64.deb
+
+      # 7. AppImage ဖန်တီးခြင်း
+      - name: Build AppImage
+        run: |
+          # AppDir Structure ဆောက်ခြင်း
+          mkdir -p AppDir/usr/bin
+          
+          # Binary ဖိုင်ထည့်ခြင်း
+          cp dist/YawStar_U-Tube_Downloader/YawStar_U-Tube_Downloader AppDir/usr/bin/YawStar_U-Tube_Downloader
+          
+          # Desktop Entry ဖန်တီးခြင်း
+          cat <<EOF > AppDir/yawstar.desktop
+          [Desktop Entry]
+          Name=YawStar U-Tube Downloader
+          Exec=YawStar_U-Tube_Downloader
+          Icon=yawstar
+          Type=Application
+          Categories=Utility;
+          EOF
+
+          # Icon ဖန်တီးခြင်း (Project ထထဲမှာ Icon ဖိုင်ရှိရင် cp icon.png AppDir/yawstar.png အဖြစ် ပြောင်းပေးပါ)
+          touch AppDir/yawstar.png
+
+          # AppRun Script ဖန်တီးခြင်း
+          cat <<EOF > AppDir/AppRun
+          #!/bin/sh
+          HERE=\$(dirname \$(readlink -f "\$0"))
+          exec "\$HERE/usr/bin/YawStar_U-Tube_Downloader" "\$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+          # AppImage ဖိုင် Build လုပ်ခြင်း (FUSE မလိုအောင် --appimage-extract-and-run သုံးထားပါသည်)
+          ARCH=x86_64 appimagetool --appimage-extract-and-run AppDir dist/YawStar_U-Tube_Downloader-x86_64.AppImage
+
+      # 8. ထွက်လာသည့် Binary၊ .deb နှင့် .AppImage ဖိုင်အားလုံးကို Upload တင်ခြင်း
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: YawStar_U-Tube_Downloader-Linux
-          path: dist/YawStar_U-Tube_Downloader/
+          name: YawStar_U-Tube_Downloader-Linux-Packages
+          path: |
+            dist/YawStar_U-Tube_Downloader/
+            dist/*.deb
+            dist/*.AppImage
