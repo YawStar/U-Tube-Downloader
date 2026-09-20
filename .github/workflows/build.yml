@@ -1,66 +1,144 @@
-name: Build Application
+name: Build & Release Application
 
 on:
   push:
+    tags:
+      - 'v*.*.*'
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Manual Version'
+        required: false
+        default: '1.0.0.29'
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  build:
+  # ==========================================
+  # 1. SETUP & VERSIONING JOB
+  # ==========================================
+  prepare:
+    name: Prepare Build Metadata
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      is_release: ${{ steps.get_version.outputs.is_release }}
     steps:
-      # 1. Repository ကို Clone လုပ်ခြင်း
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Python တပ်ဆင်ခြင်း
+      - name: Resolve Version
+        id: get_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            IS_RELEASE="true"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            IS_RELEASE="false"
+          else
+            VERSION="1.0.0.29"
+            IS_RELEASE="false"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
+
+  # ==========================================
+  # 2. BUILD JOB (MATRIX STRATEGY)
+  # ==========================================
+  build:
+    name: Build Packages (${{ matrix.target }})
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: deb
+            name: Debian Package
+          - target: appimage
+            name: AppImage Executable
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. Astral uv တပ်ဆင်ခြင်း
       - name: Install uv
         uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
-      # 4. UPX နှင့် AppImage Tool များ တပ်ဆင်ခြင်း
-      - name: Install Dependencies & Tools
+      - name: Cache AppImage Tooling
+        if: matrix.target == 'appimage'
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/appimagetool
+          key: appimagetool-x86_64-v1
+
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y upx dpkg-dev wget
           
-          # appimagetool ဒေါင်းလုဒ်လုပ်ခြင်း
-          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-          chmod +x appimagetool
-          sudo mv appimagetool /usr/local/bin/
+          if [ "${{ matrix.target }}" = "appimage" ] && [ ! -f /usr/local/bin/appimagetool ]; then
+            wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+            chmod +x appimagetool
+            sudo mv appimagetool /usr/local/bin/
+          fi
 
-      # 5. Build Script ကို Run ခြင်း (onedir output ထွက်လာမည်)
-      - name: Run build script
+      - name: Install Python Dependencies & Build Application
         run: |
+          uv sync
           uv run python build.py
 
-      # 6. .deb Package ဖန်တီးခြင်း (_internal folder ပါအပါအဝင် /opt ထဲထည့်သွင်းမည်)
+      # --- BUILD .DEB PACKAGE ---
       - name: Build .deb Package
+        if: matrix.target == 'deb'
+        env:
+          APP_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          # Structure ဆောက်ခြင်း
           mkdir -p deb_build/DEBIAN
-          mkdir -p deb_build/opt/yawstar-downloader
+          mkdir -p deb_build/opt/yawstar-u-tube-downloader
           mkdir -p deb_build/usr/bin
+          mkdir -p deb_build/usr/share/applications
+          mkdir -p deb_build/usr/share/icons/hicolor/256x256/apps
 
-          # PyInstaller က ထွက်လာတဲ့ folder တစ်ခုလုံး (binary + _internal) ကို /opt ထဲ ကူးထည့်ခြင်း
-          cp -r dist/YawStar_U-Tube_Downloader/* deb_build/opt/yawstar-downloader/
-          chmod +x deb_build/opt/yawstar-downloader/YawStar_U-Tube_Downloader
+          # Binary output များ ကူးထည့်ခြင်း
+          cp -r dist/YawStar_U-Tube_Downloader/* deb_build/opt/yawstar-u-tube-downloader/
+          chmod +x deb_build/opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader
 
-          # Terminal ကနေ တိုက်ရိုက် ခေါ်သုံးလို့ရအောင် /usr/bin ထဲ symlink ချိတ်ပေးခြင်း
-          ln -s /opt/yawstar-downloader/YawStar_U-Tube_Downloader deb_build/usr/bin/yawstar-downloader
+          # Symlink & Icon
+          ln -s /opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader deb_build/usr/bin/yawstar-u-tube-downloader
+          cp assets/images/app_icon.png deb_build/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
 
-          # Control File ဖန်တီးခြင်း
+          # .desktop ဖိုင်ဖန်တီးခြင်း (Terminal=false စာလုံးသေး သုံးထားပါသည်)
+          cat <<EOF > deb_build/usr/share/applications/yawstar-u-tube-downloader.desktop
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=YawStar U-Tube Downloader
+          Comment=YawStar U-Tube Downloader Application
+          Exec=/opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader %U
+          Icon=yawstar-u-tube-downloader
+          Terminal=false
+          StartupNotify=true
+          Categories=Network;AudioVideo;Video;Utility;
+          EOF
+
+          # DEBIAN Control File
           cat <<EOF > deb_build/DEBIAN/control
-          Package: yawstar-tube-downloader
-          Version: 1.0.0
+          Package: yawstar-u-tube-downloader
+          Version: ${APP_VERSION}
           Section: utils
           Priority: optional
           Architecture: amd64
@@ -68,32 +146,62 @@ jobs:
           Description: YawStar U-Tube Downloader Application
           EOF
 
-          # .deb ဖိုင် Build လုပ်ခြင်း
-          dpkg-deb --build deb_build dist/YawStar_U-Tube_Downloader_1.0.0_amd64.deb
+          # Installation ပြီးလျှင် Menu ထဲချက်ချင်းပေါ်အောင် Trigger လုပ်ပေးမည့် Script (postinst)
+          cat <<EOF > deb_build/DEBIAN/postinst
+          #!/bin/sh
+          set -e
+          if [ -x "\$(command -v update-desktop-database)" ]; then
+            update-desktop-database -q /usr/share/applications || true
+          fi
+          if [ -x "\$(command -v gtk-update-icon-cache)" ]; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+          fi
+          EOF
+          chmod +x deb_build/DEBIAN/postinst
 
-      # 7. AppImage ဖန်တီးခြင်း (_internal folder ပါအပါအဝင် AppDir ထဲထည့်သွင်းမည်)
+          # Uninstallation လုပ်လျှင်လည်း Database Refresh ပြန်လုပ်ပေးမည့် Script (postrm)
+          cat <<EOF > deb_build/DEBIAN/postrm
+          #!/bin/sh
+          set -e
+          if [ -x "\$(command -v update-desktop-database)" ]; then
+            update-desktop-database -q /usr/share/applications || true
+          fi
+          if [ -x "\$(command -v gtk-update-icon-cache)" ]; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+          fi
+          EOF
+          chmod +x deb_build/DEBIAN/postrm
+
+          mkdir -p artifacts
+          dpkg-deb --build deb_build "artifacts/YawStar_U-Tube_Downloader_${APP_VERSION}_amd64.deb"
+
+      # --- BUILD APPIMAGE ---
       - name: Build AppImage
+        if: matrix.target == 'appimage'
+        env:
+          APP_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          # AppDir Structure ဆောက်ခြင်း
           mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           
-          # PyInstaller ထွက်လာသမျှ folder အကြောင်းအရာ အားလုံးကို AppDir/usr/bin ထဲ ကူးထည့်ခြင်း
           cp -r dist/YawStar_U-Tube_Downloader/* AppDir/usr/bin/
-          
-          # Desktop Entry ဖန်တီးခြင်း
-          cat <<EOF > AppDir/yawstar.desktop
+          cp assets/images/app_icon.png AppDir/yawstar-u-tube-downloader.png
+          cp assets/images/app_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
+
+          # AppImage အတွက် Desktop Entry (Terminal=false စာလုံးသေး ထည့်ထားပါသည်)
+          cat <<EOF > AppDir/yawstar-u-tube-downloader.desktop
           [Desktop Entry]
-          Name=YawStar U-Tube Downloader
-          Exec=YawStar_U-Tube_Downloader
-          Icon=yawstar
+          Version=1.0
           Type=Application
-          Categories=Utility;
+          Name=YawStar U-Tube Downloader
+          Exec=YawStar_U-Tube_Downloader %U
+          Icon=yawstar-u-tube-downloader
+          Terminal=false
+          StartupNotify=true
+          Categories=Network;AudioVideo;Video;Utility;
           EOF
 
-          # Icon ဖိုင် (Project ထဲမှာ Icon ရှိပါက touch မလုပ်ဘဲ cp icon.png AppDir/yawstar.png ဟု ပြောင်းပါ)
-          touch AppDir/yawstar.png
-
-          # AppRun Script ဖန်တီးခြင်း
+          # AppRun Script
           cat <<EOF > AppDir/AppRun
           #!/bin/sh
           HERE=\$(dirname \$(readlink -f "\$0"))
@@ -101,15 +209,51 @@ jobs:
           EOF
           chmod +x AppDir/AppRun
 
-          # AppImage ဖိုင် Build လုပ်ခြင်း
-          ARCH=x86_64 appimagetool --appimage-extract-and-run AppDir dist/YawStar_U-Tube_Downloader-x86_64.AppImage
+          mkdir -p artifacts
+          ARCH=x86_64 appimagetool --appimage-extract-and-run AppDir "artifacts/YawStar_U-Tube_Downloader-${APP_VERSION}-x86_64.AppImage"
 
-      # 8. ထွက်လာသည့် Artifact များအားလုံးကို Upload တင်ခြင်း
-      - name: Upload Build Artifacts
+      - name: Upload Single Target Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: YawStar_U-Tube_Downloader-Linux-Packages
-          path: |
-            dist/*.deb
-            dist/*.AppImage
+          name: build-artifact-${{ matrix.target }}
+          path: artifacts/*
           if-no-files-found: error
+
+  # ==========================================
+  # 3. METADATA & RELEASE JOB
+  # ==========================================
+  release:
+    name: Generate Checksums & Create Release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    if: always() && !failure() && !cancelled()
+    steps:
+      - name: Download All Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets
+          pattern: build-artifact-*
+          merge-multiple: true
+
+      - name: Generate SHA256 Checksums
+        run: |
+          cd release_assets
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload Final Artifacts Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: YawStar_U-Tube_Downloader-Linux-Release
+          path: release_assets/*
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_assets/*
+          name: YawStar U-Tube Downloader v${{ needs.prepare.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
