@@ -45,8 +45,7 @@ class SettingsDialog(QDialog):
                         break
         
         self.setWindowTitle("Settings")
-        # self.setFixedSize(680, 520)
-        self.setFixedSize(680, 680)
+        self.setFixedSize(680, 628)
         
         if self.ui.layout():
             self.setLayout(self.ui.layout())
@@ -85,6 +84,19 @@ class SettingsDialog(QDialog):
                 background-color: #161616;
                 color: #ffffff;
             }
+
+            /* Global Controls Height Alignment Fix */
+            QLineEdit, QComboBox, QSpinBox {
+                min-height: 20px;
+                max-height: 20px;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+
+            QGroupBox {
+                margin-top: 6px;
+                padding-top: 10px;
+            }
             
             /* Primary Action Button (Save Changes) */
             QPushButton#btn_pref_action {
@@ -113,7 +125,7 @@ class SettingsDialog(QDialog):
                 color: #f8fafc !important;
                 border: 1px solid #475569 !important;
                 border-radius: 6px !important;
-                padding: 5px 15px !important;
+                padding: 4px 12px !important;
                 font-weight: normal !important;
             }
             QPushButton#btn_pref_secondary:hover {
@@ -151,9 +163,9 @@ class SettingsDialog(QDialog):
                 font-size: normal !important;
             }
             QPushButton#btn_pref_def_restore:hover {
-            background-color: #450a0a !important;
-            color: #fca5a5 !important;
-            border-color: #991b1b !important;
+                background-color: #450a0a !important;
+                color: #fca5a5 !important;
+                border-color: #991b1b !important;
             }
             QPushButton#btn_pref_def_restore:pressed {
                 background-color: #0f172a !important;
@@ -221,6 +233,8 @@ class SettingsDialog(QDialog):
 
         # Signals & Slots connections
         self.ui.btn_BrowsePath.clicked.connect(self.on_browse_clicked)
+        self.ui.btn_reset_output_template.clicked.connect(self.on_reset_output_template_clicked)
+        self.ui.btn_reset_playlist_indexing.clicked.connect(self.on_reset_playlist_indexing_clicked)
         self.ui.btn_save.clicked.connect(self.on_save_clicked)
         self.ui.btn_cancel.clicked.connect(self.reject)
         self.ui.btn_restore.clicked.connect(self.on_restore_defaults_clicked)
@@ -385,6 +399,8 @@ class SettingsDialog(QDialog):
         self.ui.chk_speed_limit.setChecked(mgr.get("use_speed_limit", False))
         self.ui.spin_speed_limit.setValue(mgr.get("speed_limit_val", 500))
         self.ui.inp_dowload_path.setText(mgr.get("download_path", ""))
+        self.ui.inp_output_template.setText(mgr.get("output_template", "%(title)s.%(ext)s"))
+        self.ui.inp_playlist_indexing.setText(mgr.get("playlist_indexing", "%(playlist_index)s - "))
         self.ui.chk_forceOverwrite.setChecked(mgr.get("force_overwrite", False))
         self.ui.chk_awakeMode.setChecked(mgr.get("awake_mode", False))
         
@@ -420,6 +436,12 @@ class SettingsDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(self, "Select Download Directory", current_path)
         if dir_path:
             self.ui.inp_dowload_path.setText(os.path.normpath(dir_path))
+
+    def on_reset_output_template_clicked(self):
+        self.ui.inp_output_template.setText("%(title)s.%(ext)s")
+
+    def on_reset_playlist_indexing_clicked(self):
+        self.ui.inp_playlist_indexing.setText("%(playlist_index)s - ")
 
     def on_browse_cookies_clicked(self):
         current_path = self.ui.inp_cookies_path.text() if hasattr(self.ui, 'inp_cookies_path') else ""
@@ -464,6 +486,8 @@ class SettingsDialog(QDialog):
             "simultaneous_limit": self.ui.spin_Simultaneous.value(),
             "speed_limit_val": self.ui.spin_speed_limit.value(),
             "download_path": self.ui.inp_dowload_path.text(),
+            "output_template": self.ui.inp_output_template.text(),
+            "playlist_indexing": self.ui.inp_playlist_indexing.text(),
             "force_overwrite": self.ui.chk_forceOverwrite.isChecked(),
             "awake_mode": self.ui.chk_awakeMode.isChecked(),
             "use_proxy": self.ui.chk_use_proxy.isChecked(),
