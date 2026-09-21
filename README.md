@@ -220,16 +220,22 @@ YawStar-U-Tube-Downloader/
 
    ```bash
    git clone https://github.com/yawstar/u-tube-downloader.git
+   ```
+
+2. **Change Directory:**
+
+   ```bash
    cd u-tube-downloader
    ```
 
-2. **Sync and install dependencies:**
+
+3. **Sync and install dependencies:**
 
    ```bash
    uv sync
    ```
 
-3. **Run the application:**
+4. **Run the application:**
 
    ```bash
    uv run main.py
@@ -241,9 +247,9 @@ YawStar-U-Tube-Downloader/
 
 Application configurations and cache data are automatically saved under standard platform user data directories:
 
-- **Windows**: `%LOCALAPPDATA%\YawStar\YawStar Downloader\config.json`
-- **Linux**: `~/.local/share/YawStar/YawStar Downloader/config.json`
-- **macOS**: `~/Library/Application Support/YawStar/YawStar Downloader/config.json`
+- **Windows**: `%APPDATA%\YawStar\YawStar U-Tube Downloader\config.json`
+- **Linux**: `~/.local/share/YawStar/YawStar U-Tube Downloader/config.json`
+- **macOS**: `~/Library/Application Support/YawStar/YawStar U-Tube Downloader/config.json`
 
 ### Supported Cookie Modes
 
