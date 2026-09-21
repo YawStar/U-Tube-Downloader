@@ -24,7 +24,7 @@ jobs:
   # ==========================================
   prepare:
     name: Prepare Build Metadata
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       is_release: ${{ steps.get_version.outputs.is_release }}
@@ -54,7 +54,7 @@ jobs:
   build:
     name: Build Packages (${{ matrix.target }})
     needs: [prepare]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -113,15 +113,15 @@ jobs:
           mkdir -p deb_build/usr/share/applications
           mkdir -p deb_build/usr/share/icons/hicolor/256x256/apps
 
-          # Binary output များ ကူးထည့်ခြင်း
+          # Binary Files များ ကူးယူခြင်း
           cp -r dist/YawStar_U-Tube_Downloader/* deb_build/opt/yawstar-u-tube-downloader/
           chmod +x deb_build/opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader
 
-          # Symlink & Icon
+          # Symlink သတ်မှတ်ခြင်း နှင့် Icon များ ကူးယူခြင်း
           ln -s /opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader deb_build/usr/bin/yawstar-u-tube-downloader
           cp assets/images/app_icon.png deb_build/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
 
-          # .desktop ဖိုင်ဖန်တီးခြင်း (Terminal=false စာလုံးသေး သုံးထားပါသည်)
+          # Linux Menu ပေါ်တွင် ပေါ်စေမည့် .desktop ဖိုင်ဖန်တီးခြင်း
           cat <<EOF > deb_build/usr/share/applications/yawstar-u-tube-downloader.desktop
           [Desktop Entry]
           Version=1.0
@@ -135,7 +135,7 @@ jobs:
           Categories=Network;AudioVideo;Video;Utility;
           EOF
 
-          # DEBIAN Control File
+          # Debian Control File ဖန်တီးခြင်း
           cat <<EOF > deb_build/DEBIAN/control
           Package: yawstar-u-tube-downloader
           Version: ${APP_VERSION}
@@ -146,7 +146,7 @@ jobs:
           Description: YawStar U-Tube Downloader Application
           EOF
 
-          # Installation ပြီးလျှင် Menu ထဲချက်ချင်းပေါ်အောင် Trigger လုပ်ပေးမည့် Script (postinst)
+          # .deb သွင်းပြီးချိန်တွင် Desktop Menu Database ကို Refresh လုပ်ပေးမည့် Script (postinst)
           cat <<EOF > deb_build/DEBIAN/postinst
           #!/bin/sh
           set -e
@@ -159,7 +159,7 @@ jobs:
           EOF
           chmod +x deb_build/DEBIAN/postinst
 
-          # Uninstallation လုပ်လျှင်လည်း Database Refresh ပြန်လုပ်ပေးမည့် Script (postrm)
+          # .deb ဖြုတ်လိုက်ချိန်တွင် Desktop Menu Database ကို Refresh လုပ်ပေးမည့် Script (postrm)
           cat <<EOF > deb_build/DEBIAN/postrm
           #!/bin/sh
           set -e
@@ -188,7 +188,6 @@ jobs:
           cp assets/images/app_icon.png AppDir/yawstar-u-tube-downloader.png
           cp assets/images/app_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
 
-          # AppImage အတွက် Desktop Entry (Terminal=false စာလုံးသေး ထည့်ထားပါသည်)
           cat <<EOF > AppDir/yawstar-u-tube-downloader.desktop
           [Desktop Entry]
           Version=1.0
@@ -201,12 +200,12 @@ jobs:
           Categories=Network;AudioVideo;Video;Utility;
           EOF
 
-          # AppRun Script
-          cat <<EOF > AppDir/AppRun
+          cat <<'EOF' > AppDir/AppRun
           #!/bin/sh
-          HERE=\$(dirname \$(readlink -f "\$0"))
-          exec "\$HERE/usr/bin/YawStar_U-Tube_Downloader" "\$@"
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/YawStar_U-Tube_Downloader" "$@"
           EOF
+
           chmod +x AppDir/AppRun
 
           mkdir -p artifacts
@@ -225,7 +224,7 @@ jobs:
   release:
     name: Generate Checksums & Create Release
     needs: [prepare, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always() && !failure() && !cancelled()
     steps:
       - name: Download All Build Artifacts
