@@ -1,0 +1,63 @@
+YawStar U-Tube Downloader (R) ဗားရှင်း 1.0.0.29
+မူပိုင်ခွင့် (c) 2009 - 2026 https://yawstar.blogspot.com
+မူပိုင်ခွင့်များ ရယူထားပြီးဖြစ်သည်။
+
+ဆော့ဖ်ဝဲ လိုင်စင် သဘောတူညီချက် (အခမဲ့နှင့် ပွင့်လင်းရင်းမြစ် ဆော့ဖ်ဝဲ)
+
+   ကျေးဇူးပြု၍ ဤဆော့ဖ်ဝဲကို မတပ်ဆင်မီ သို့မဟုတ် မသုံးစွဲမီ ဤဆော့ဖ်ဝဲ လိုင်စင် သဘောတူညီချက် ("လိုင်စင်") ကို သေချာစွာ ဖတ်ရှုပါ။ ဤဆော့ဖ်ဝဲကို တပ်ဆင်ခြင်း၊ ကူးယူခြင်း သို့မဟုတ် အသုံးပြုခြင်းဖြင့် သင်သည် ဤလိုင်စင်၏ စည်းကမ်းချက်များကို လိုက်နာရန် သဘောတူညီပြီး ဖြစ်သည်။
+
+၁။ လိုင်စင် ခွင့်ပြုချက် (အခမဲ့နှင့် ပွင့်လင်းရင်းမြစ်)။
+   YawStar U-Tube Downloader သည် အခမဲ့နှင့် ပွင့်လင်းရင်းမြစ် (Free and Open Source) ဆော့ဖ်ဝဲ ဖြစ်သည်။ ဤဆော့ဖ်ဝဲနှင့် သက်ဆိုင်သော စာရွက်စာတမ်းများ ("ဆော့ဖ်ဝဲ") ကို ရရှိသူ မည်သူမဆို ဤလိုင်စင် စည်းကမ်းချက်များနှင့်အညီ အခမဲ့ အသုံးပြုခြင်း၊ ကူးယူခြင်း၊ ပြင်ဆင်ခြင်း၊ ပေါင်းစပ်ခြင်း၊ ထုတ်ဝေခြင်း၊ ဖြန့်ဝေခြင်း၊ လိုင်စင်ခွဲပေးခြင်း နှင့်/သို့မဟုတ် ပြန်လည်ရောင်းချခြင်းတို့ ပြုလုပ်ရန် ခွင့်ပြုချက်ပေးထားသည်။
+
+၂။ ခွင့်ပြုထားသော အသုံးပြုမှုများနှင့် စည်းကမ်းချက်များ။
+   - သင်သည် ဤဆော့ဖ်ဝဲကို ကိုယ်ပိုင်၊ ပညာရေး သို့မဟုတ် စီးပွားရေး ရည်ရွယ်ချက်များအတွက် အခမဲ့ ရယူသုံးစွဲနိုင်သည်။
+   - Source Code ကို စစ်ဆေးခြင်း၊ ပြင်ဆင်ခြင်း နှင့် မူရင်းမှ ဆင်းသက်လာသော ဆော့ဖ်ဝဲများ ထုတ်လုပ်ခြင်းတို့ကို ပြုလုပ်ပိုင်ခွင့် ရှိသည်။
+   - ဆော့ဖ်ဝဲ၏ မူရင်း သို့မဟုတ် ပြင်ဆင်ထားသော မိတ္တူများကို ပြန်လည်ဖြန့်ဝေခွင့် ရှိသည်။ သို့သော် ဤမူပိုင်ခွင့် အသိပေးချက်နှင့် ခွင့်ပြုချက် အသိပေးချက်များကို မိတ္တူအားလုံး သို့မဟုတ် အဓိက အစိတ်အပိုင်းများတွင် ပါဝင်စေရမည်။
+
+၃။ Source Code ရရှိနိုင်မှု။
+   YawStar U-Tube Downloader ၏ ပင်မ Source Code အပြည့်အစုံကို GitHub (https://github.com/YawStar/U-Tube-Downloader) တွင် အများပြည်သူ လွတ်လပ်စွာ ကြည့်ရှုနိုင်ရန် လွှင့်တင်ထားသည်။ ဆော့ဖ်ဝဲ ပိုမိုကောင်းမွန်ရေး ပါဝင်ကူညီခြင်း၊ ပြဿနာများ (Issues) တိုင်ကြားခြင်း သို့မဟုတ် Source Code စစ်ဆေးခြင်းများကို လွတ်လပ်စွာ ပြုလုပ်နိုင်ပါသည်။
+
+၄။ တာဝန်ယူမှု မရှိကြောင်း အာမခံချက် ငြင်းဆိုခြင်း။
+   ဤဆော့ဖ်ဝဲကို မည်သည့် အာမခံချက် (ဖော်ပြထားသော သို့မဟုတ် သွယ်ဝိုက်သော) မှ မပါဘဲ "အရှိအတိုင်း" (AS IS) ပံ့ပိုးပေးထားခြင်း ဖြစ်သည်။ 
+   ဆော့ဖ်ဝဲ ရေးသားသူ သို့မဟုတ် မူပိုင်ခွင့် ရရှိထားသူများသည် ဤဆော့ဖ်ဝဲ အသုံးပြုမှုကြောင့် သို့မဟုတ် အသုံးပြု၍ မရမှုကြောင့် ဖြစ်ပေါ်လာသော မည်သည့် နစ်နာမှု၊ ပျက်စီးမှု သို့မဟုတ် တာဝန်ယူမှုများအတွက်မျှ တာဝန်ယူမည် မဟုတ်ပါ။
+
+၅။ ပင်မ သဘောတူညီချက်။
+   ဤလိုင်စင်သည် ဆော့ဖ်ဝဲ အသုံးပြုခြင်းနှင့် ဖြန့်ဝေခြင်းဆိုင်ရာ စည်းကမ်းချက် အပြည့်အစုံ ဖြစ်ပြီး ယခင်က ပြုလုပ်ခဲ့သော သဘောတူညီချက်များ သို့မဟုတ် နားလည်မှုအားလုံးကို အစားထိုးပါသည်။
+
+---
+Repo Page: https://github.com/YawStar/U-Tube-Downloader
+Web Site: https://yawstar.blogspot.com
+E-mail: yawstar.2009@gmail.com
+
+-----------------------------------------------------------------------------------------
+
+YawStar U-Tube Downloader (R) version 1.0.0.29
+Copyright (c) 2009 - 2026 https://yawstar.blogspot.com
+All rights reserved.
+
+Software License Agreement (Free and Open Source Software)
+
+   PLEASE READ THIS SOFTWARE LICENSE AGREEMENT ("LICENSE") CAREFULLY BEFORE INSTALLING OR USING THE SOFTWARE. BY INSTALLING, COPYING, OR USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE.
+
+1. License Grant (Free & Open Source).
+   YawStar U-Tube Downloader is Free and Open Source Software. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the conditions of this License.
+
+2. Permitted Uses and Restrictions.
+   - You are free to run and use this Software for personal, educational, or commercial purposes.
+   - You are allowed to inspect, modify, and build derivative works from the source code.
+   - You are permitted to redistribute unmodified or modified copies of the Software, provided that this copyright notice and permission notice remain intact in all copies or substantial portions of the Software.
+
+3. Source Code Availability.
+   The complete source code for YawStar U-Tube Downloader is publicly available on GitHub at https://github.com/YawStar/U-Tube-Downloader. You are encouraged to contribute, report issues, or inspect the source code.
+
+4. Disclaimer of Warranty.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+   IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+5. Complete Agreement.
+   This License constitutes the entire agreement between the parties regarding the use and distribution of the Software and supersedes any prior agreements or understandings.
+
+---
+Repo Page: https://github.com/YawStar/U-Tube-Downloader
+Web Site: https://yawstar.blogspot.com
+E-mail: yawstar.2009@gmail.com
