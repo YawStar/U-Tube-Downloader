@@ -65,6 +65,8 @@ class ConfigManager:
             "ytdlp_path": os.path.join(TPT_DIR, f"yt-dlp{BIN_EXT}"),
             "deno_path": os.path.join(TPT_DIR, f"deno{BIN_EXT}"),
             "download_path": default_output_dir,
+            "output_template": "%(title)s.%(ext)s",
+            "playlist_indexing": "%(playlist_index)s - ",
             "embed_thumbnail": True,
             "save_thumbnail": False,
             "embed_subtitles": True,
