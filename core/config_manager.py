@@ -92,6 +92,8 @@ class ConfigManager:
             "use_proxy": False,
             "proxy_host": "127.0.0.1",
             "proxy_port": 10808,
+            "proxy_auth_name": "",
+            "proxy_auth_password": "",
             "use_cookies": False,
             "cookies_type": "",
             "cookies_path": ""
