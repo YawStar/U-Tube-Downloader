@@ -238,6 +238,8 @@ class SettingsDialog(QDialog):
         self.ui.btn_save.clicked.connect(self.on_save_clicked)
         self.ui.btn_cancel.clicked.connect(self.reject)
         self.ui.btn_restore.clicked.connect(self.on_restore_defaults_clicked)
+        self.ui.chk_use_proxy.clicked.connect(self.on_use_proxy_update)
+        self.ui.btn_clear_cookies.clicked.connect(self.on_clear_restored_cookies)
         
         if hasattr(self.ui, 'btn_browse_cookies'):
             self.ui.btn_browse_cookies.clicked.connect(self.on_browse_cookies_clicked)
@@ -248,6 +250,8 @@ class SettingsDialog(QDialog):
         
         # Load Settings Into UI
         self.load_settings_into_ui()
+        # Checkbox ရဲ့ Saved State အတိုင်း control တွေကို enable/disable ဖြစ်အောင် ခေါ်ပေးပါ
+        self.on_use_proxy_update()
 
     def apply_msgbox_style(self, msg_box):
         """ QMessageBox ၏ Dark Theme Style နှင့် Buttons စတိုင်လ်များကို သတ်မှတ်ပေးခြင်း """
@@ -408,6 +412,8 @@ class SettingsDialog(QDialog):
         self.ui.chk_use_proxy.setChecked(mgr.get("use_proxy", False))
         self.ui.inp_proxy_host.setText(mgr.get("proxy_host", ""))
         self.ui.spin_proxy_port.setValue(mgr.get("proxy_port", 8080))
+        self.ui.inp_proxy_user.setText(mgr.get("proxy_auth_name", ""))
+        self.ui.inp_proxy_pass.setText(mgr.get("proxy_auth_password", ""))
 
         # Cookie Settings
         cookies_type = str(mgr.get("cookies_type", "none")).lower()
@@ -442,6 +448,39 @@ class SettingsDialog(QDialog):
 
     def on_reset_playlist_indexing_clicked(self):
         self.ui.inp_playlist_indexing.setText("%(playlist_index)s - ")
+
+    def on_use_proxy_update1(self):
+        if self.ui.chk_use_proxy.isChecked():
+            self.ui.inp_proxy_host.setEnabled(True)
+            self.ui.inp_proxy_user.setEnabled(True)
+            self.ui.combo_proxy_type.setEnabled(True)
+            self.ui.spin_proxy_port.setEnabled(True)
+            self.ui.inp_proxy_pass.setEnabled(True)
+            self.ui.spin_socket_timeout.setEnabled(True)
+            self.ui.spin_max_retries.setEnabled(True)
+            self.ui.inp_geo_bypass_country.setEnabled(True)
+        else:
+            self.ui.inp_proxy_host.setEnabled(False)
+            self.ui.inp_proxy_user.setEnabled(False)
+            self.ui.combo_proxy_type.setEnabled(False)
+            self.ui.spin_proxy_port.setEnabled(False)
+            self.ui.inp_proxy_pass.setEnabled(False)
+            self.ui.spin_socket_timeout.setEnabled(False)
+            self.ui.spin_max_retries.setEnabled(False)
+            self.ui.inp_geo_bypass_country.setEnabled(False)
+
+    def on_use_proxy_update(self):
+            is_checked = self.ui.chk_use_proxy.isChecked()
+            
+            controls = [
+                'inp_proxy_host', 'inp_proxy_user', 'combo_proxy_type',
+                'spin_proxy_port', 'inp_proxy_pass', 'spin_socket_timeout',
+                'spin_max_retries', 'inp_geo_bypass_country'
+            ]
+            
+            for widget_name in controls:
+                if hasattr(self.ui, widget_name):
+                    getattr(self.ui, widget_name).setEnabled(is_checked)
 
     def on_browse_cookies_clicked(self):
         current_path = self.ui.inp_cookies_path.text() if hasattr(self.ui, 'inp_cookies_path') else ""
@@ -493,6 +532,8 @@ class SettingsDialog(QDialog):
             "use_proxy": self.ui.chk_use_proxy.isChecked(),
             "proxy_host": self.ui.inp_proxy_host.text(),
             "proxy_port": self.ui.spin_proxy_port.value(),
+            "proxy_auth_name": self.ui.inp_proxy_user.text(),
+            "proxy_auth_password": self.ui.inp_proxy_pass.text(),
             # Cookies ဆက်တင်များ
             "use_cookies": use_Cookies,
             "cookies_type": self.get_selected_cookies_type(),
@@ -539,3 +580,7 @@ class SettingsDialog(QDialog):
                 self.accept()
             else:
                 self.show_custom_message("warning", "Error", "Failed to restore default settings.")
+
+    def on_clear_restored_cookies(self):
+        self.ui.inp_cookies_path.setText("")
+        self.ui.txt_manual_cookie.setText("")
