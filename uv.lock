@@ -2,12 +2,6 @@ version = 1
 revision = 3
 requires-python = ">=3.13.13"
 
-[manifest]
-members = [
-    "test",
-    "yawstar-u-tube-downloader",
-]
-
 [[package]]
 name = "bidict"
 version = "0.24.1"
@@ -480,11 +474,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/6b/fee1b4814317e4664e318644c9c007676c65a71e5b2b9d3ac4121a94dc0a/shiboken6-6.11.2-cp310-abi3-win_amd64.whl", hash = "sha256:6ab0eba1c904455df621f9a6df3ca2bb896bab8670572d2bc4e37804ae91f19a", size = 1226578, upload-time = "2026-08-18T06:37:18.002Z" },
     { url = "https://files.pythonhosted.org/packages/4d/b5/80c4e5aafeb8ac777cf5a1becfe87ac7197c35051df00b5f7819787e09d5/shiboken6-6.11.2-cp310-abi3-win_arm64.whl", hash = "sha256:97c49432488df958f0308736f3d15b6915d8826fc380af17bb4b9ec5c4a5e81b", size = 1784669, upload-time = "2026-08-18T06:37:21.046Z" },
 ]
-
-[[package]]
-name = "test"
-version = "0.1.0"
-source = { virtual = "test" }
 
 [[package]]
 name = "typing-extensions"

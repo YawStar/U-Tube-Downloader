@@ -336,7 +336,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon = None
         self.setup_tray_icon()
 
-        self.notification_service = NotificationService(self.tray_icon, self)
+        # self.notification_service = NotificationService(self.tray_icon, self)
+        self.notification_service = NotificationService(self)
 
         if self.tray_icon:
             tray_menu = QMenu(self)
@@ -464,7 +465,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.hide()
             if self.tray_icon:
                 if is_info_running or is_download_running:
-                    self.notification_service.notify_background_work()
+                    self.notification_service.send_notification(
+                        "Running in Background",
+                        "Tasks are still running in the system tray."
+                    )
         else:
             if is_info_running or is_download_running:
                 msg_box = QMessageBox(self)
@@ -975,7 +979,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         video_title = self.lblTitle.text() or "Video"
 
         if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_COMPLETED):
-            self.notification_service.notify_download_completed(video_title)
+            self.notification_service.send_notification(
+                "Download Completed!",
+                f"{video_title}",
+                file_path=self.final_downloaded_path
+            )
 
         if loaded_settings.get(ConfigKey.PLAY_AFTER_DOWNLOADED):
             if self.final_downloaded_path:
@@ -1431,7 +1439,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if (loaded_settings.get(ConfigKey.NOTIFY_FETCHED)
                     and not loaded_settings.get(ConfigKey.AUTO_START_DOWNLOAD)):
                 video_title = self.lblTitle.text()
-                self.notification_service.notify_fetch_completed(video_title)
+                self.notification_service.send_notification(
+                    "Video Info Fetched",
+                    f"{video_title}"
+                )
 
             # Auto Download
             if loaded_settings.get(ConfigKey.AUTO_START_DOWNLOAD):
@@ -1612,7 +1623,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Notification
         if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_STARTED):
-            self.notification_service.notify_download_started()
+            self.notification_service.send_notification(
+                "Download Started",
+                "Your download has been started."
+            )
 
         # Taskbar
         self.taskbar_service.reset()

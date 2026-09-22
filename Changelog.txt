@@ -92,3 +92,6 @@ version 1.0.0.29
 {*} Cookies Requiremet Message Bug ကို ပြင်ဆင်
 {+} Settings မှာ Feature အသစ်တွေ ထည့်သွင်း
 {+} Url History Feature ထည့်သွင်း
+
+version 1.0.0.30
+{^} QNotification မှ desktop_notifier သို့ပြောင်းလဲ

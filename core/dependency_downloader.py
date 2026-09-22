@@ -368,7 +368,6 @@ class DownloadWorker(QThread):
         if self._is_running:
             self.is_successful = True
 
-
 class MainWindow(QMainWindow):
     download_status_signal = Signal(bool)
 
