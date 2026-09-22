@@ -1,136 +1,92 @@
-# -*- coding: utf-8 -*-
-"""
-Notification Service
-
-QSystemTrayIcon နှင့် desktop-notifier တို့ကို အသုံးပြုပြီး Desktop Notification ပို့ပေးသည်။
-"""
 import asyncio
+import logging
 import os
-import platform
-import subprocess
 import threading
-from pathlib import Path
-from desktop_notifier import DesktopNotifier, Button
-from PySide6.QtWidgets import QSystemTrayIcon
+from PySide6.QtCore import QObject, Signal, Slot
+from desktop_notifier import DEFAULT_SOUND, Button, DesktopNotifier
 
-# Application Name
-try:
-    import core.global_constants as CONST
-    APP_NAME = CONST.APP_NAME
-except Exception:
-    APP_NAME = "YawStar U-Tube Downloader"
+from core.services.file_opener import FileOpenerService
+
+logger = logging.getLogger(__name__)
 
 
-class NotificationService:
-    def __init__(self, tray_icon: QSystemTrayIcon | None = None, parent=None):
-        self.tray_icon = tray_icon
-        
-        # desktop-notifier initialize
-        self._notifier = DesktopNotifier(app_name=APP_NAME)
-        
-        # PySide6 နှင့် မဆန့်ကျင်စေရန် background thread ထဲတွင် asyncio loop run ခြင်း
+class NotificationService(QObject):
+    """
+    Main Thread ထဲတွင် Desktop Notification များကို အလုပ်လုပ်စေမည့် Service Class။
+    Open File နှင့် Open Folder button များ ပါဝင်သည်။
+    """
+
+    _notify_signal = Signal(str, str, str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.notifier = None
+
         self._loop = asyncio.new_event_loop()
-        self._thread = threading.Thread(target=self._run_async_loop, daemon=True)
+        self._thread = threading.Thread(target=self._start_async_loop, daemon=True)
         self._thread.start()
 
-    def _run_async_loop(self):
+        self._notify_signal.connect(self._handle_send_notification)
+
+    def _start_async_loop(self):
+        """Background Thread ထဲတွင် Event Loop ဖွင့်ပြီး Notifier ကို Init လုပ်မည်"""
         asyncio.set_event_loop(self._loop)
+        self.notifier = DesktopNotifier(app_name="YawStar U-Tube Downloader")
+
+        # Windows WinRT Event Queue ကို Instant Process လုပ်ပေးမည့် Keep-Alive Task
+        self._loop.create_task(self._keep_event_loop_active())
         self._loop.run_forever()
 
-    # ------------------------------------------------------------------
-    # Helper Functions for File / Folder Open Operations
-    # ------------------------------------------------------------------
-    def _open_file(self, file_path_str: str):
-        current_os = platform.system()
-        try:
-            if current_os == "Darwin":
-                subprocess.run(["open", file_path_str])
-            elif current_os == "Linux":
-                subprocess.run(["xdg-open", file_path_str])
-            elif current_os == "Windows":
-                os.startfile(os.path.normpath(file_path_str))
-        except Exception as e:
-            print(f"[Notification] Error opening file: {e}")
-
-    def _open_folder(self, folder_path_str: str):
-        current_os = platform.system()
-        try:
-            if current_os == "Darwin":
-                subprocess.run(["open", folder_path_str])
-            elif current_os == "Linux":
-                subprocess.run(["xdg-open", folder_path_str])
-            elif current_os == "Windows":
-                os.startfile(os.path.normpath(folder_path_str))
-        except Exception as e:
-            print(f"[Notification] Error opening folder: {e}")
-
-    # ------------------------------------------------------------------
-    # Core notify (QSystemTrayIcon fallback)
-    # ------------------------------------------------------------------
-    def notify(
-        self,
-        title: str,
-        message: str = "",
-        duration_ms: int = 3000,
-        icon: QSystemTrayIcon.MessageIcon = QSystemTrayIcon.MessageIcon.Information,
-    ) -> bool:
-        if self.tray_icon is None:
-            print(f"[Notification skipped] {title}: {message}")
-            return False
-
-        try:
-            self.tray_icon.showMessage(title, message, icon, duration_ms)
-            return True
-        except Exception as e:
-            print(f"Tray notification error: {e}")
-            return False
-
-    # ------------------------------------------------------------------
-    # Domain-specific wrappers
-    # ------------------------------------------------------------------
-    def notify_fetch_completed(self, video_title: str, duration_ms: int = 3000) -> bool:
-        return self.notify("Fetching Completed!", video_title, duration_ms)
-
-    def notify_download_started(self, duration_ms: int = 3000) -> bool:
-        return self.notify("Download Started.", "", duration_ms)
-
-    def notify_download_completed(self, video_title: str, file_path_str: str = "") -> bool:
+    async def _keep_event_loop_active(self):
         """
-        Download ပြီးဆုံးသည့်အခါ desktop-notifier ၏ send() ကိုသုံးပြီး 
-        Open File နှင့် Open Folder ခလုတ်များပါသော Notification ပြသပေးမည်။
+        Windows Toast Notification ၏ Button Click Callback များကို ချက်ချင်း
+        တုံ့ပြန်နိုင်ရန် Event Loop ကို Idle မဖြစ်စေဘဲ စက္ကန့်ဝက်တိုင်း Yield လုပ်ပေးမည့် Task
         """
-        if not file_path_str:
-            return self.notify("Download Complete", video_title)
+        while True:
+            await asyncio.sleep(0.5)
 
+    def send_notification(self, title: str, message: str, file_path: str = ""):
+        self._notify_signal.emit(title, message, file_path)
+
+    @Slot(str, str, str)
+    def _handle_send_notification(self, title: str, message: str, file_path: str):
         try:
-            file_path = Path(file_path_str).resolve()
+            asyncio.run_coroutine_threadsafe(
+                self._async_send(title, message, file_path), self._loop
+            )
+        except Exception as e:
+            logger.error(f"Failed to trigger notification: {e}")
 
-            # Buttons တည်ဆောက်ခြင်း
+    async def _async_send(self, title: str, message: str, file_path: str):
+        buttons = []
+
+        if file_path and os.path.exists(file_path):
+            abs_file_path = os.path.abspath(file_path)
+
+            def open_file():
+                try:
+                    FileOpenerService.open_folder(abs_file_path)
+                except Exception as e:
+                    logger.error(f"Failed to open file: {e}")
+
+            def open_folder():
+                try:
+                    FileOpenerService.open_folder_and_select_file(abs_file_path)
+                except Exception as e:
+                    logger.error(f"Failed to open folder: {e}")
+
             buttons = [
-                Button(
-                    title="Open File",
-                    on_pressed=lambda: self._open_file(str(file_path))
-                ),
-                Button(
-                    title="Open Folder",
-                    on_pressed=lambda: self._open_folder(str(file_path.parent))
-                )
+                Button(title="Open File", on_pressed=open_file),
+                Button(title="Open Folder", on_pressed=open_folder),
             ]
 
-            # Async send coroutine ကို background loop ထဲသို့ပို့ပေးခြင်း
-            asyncio.run_coroutine_threadsafe(
-                self._notifier.send(
-                    title="Download Complete",
-                    message=file_path.name,
+        try:
+            if self.notifier:
+                await self.notifier.send(
+                    title=title,
+                    message=message,
                     buttons=buttons,
-                ),
-                self._loop
-            )
-            return True
-
+                    sound=DEFAULT_SOUND,
+                )
         except Exception as e:
-            print(f"[desktop-notifier error]: {e}")
-            return self.notify("Download Complete", video_title)
-
-    def notify_background_work(self, duration_ms: int = 2000) -> bool:
-        return self.notify(APP_NAME, "App is still working in the background.", duration_ms)
+            logger.error(f"Desktop Notifier Error: {e}")
