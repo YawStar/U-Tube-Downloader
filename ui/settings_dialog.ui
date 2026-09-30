@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>680</width>
-    <height>628</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,19 +15,19 @@
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
    <property name="spacing">
-    <number>8</number>
+    <number>4</number>
    </property>
    <property name="leftMargin">
-    <number>10</number>
+    <number>8</number>
    </property>
    <property name="topMargin">
-    <number>10</number>
+    <number>8</number>
    </property>
    <property name="rightMargin">
-    <number>10</number>
+    <number>8</number>
    </property>
    <property name="bottomMargin">
-    <number>10</number>
+    <number>8</number>
    </property>
    <item>
     <widget class="QTabWidget" name="tabWidget">
@@ -40,19 +40,19 @@
       </attribute>
       <layout class="QVBoxLayout" name="generalVLayout">
        <property name="spacing">
-        <number>8</number>
+        <number>4</number>
        </property>
        <property name="leftMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="topMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="rightMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <item>
         <widget class="QGroupBox" name="gp_Language">
@@ -60,6 +60,12 @@
           <string>Language</string>
          </property>
          <layout class="QHBoxLayout" name="langHLayout">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QLabel" name="lblLang">
             <property name="text">
@@ -99,6 +105,15 @@
           <string>Automation</string>
          </property>
          <layout class="QVBoxLayout" name="autoVLayout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QCheckBox" name="chk_add_clipboard_auto">
             <property name="text">
@@ -131,6 +146,20 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="chkAlwaysOnTop">
+         <property name="text">
+          <string>Always on top</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chkRememberSizePos">
+         <property name="text">
+          <string>Remember window size &amp;&amp; position</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="chk_minimize_to_tray">
          <property name="text">
           <string>Minimize to system tray on close</string>
@@ -143,6 +172,12 @@
           <string>Notifications</string>
          </property>
          <layout class="QHBoxLayout" name="notifHLayout">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QCheckBox" name="chk_notify_fetched">
             <property name="text">
@@ -186,6 +221,12 @@
           <string>Application Updates</string>
          </property>
          <layout class="QHBoxLayout" name="updatesHLayout">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QCheckBox" name="chk_auto_update">
             <property name="text">
@@ -246,28 +287,34 @@
       </attribute>
       <layout class="QVBoxLayout" name="downloadLayout">
        <property name="spacing">
-        <number>6</number>
+        <number>4</number>
        </property>
        <property name="leftMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="topMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="rightMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <item>
         <widget class="QGroupBox" name="groupPreferences">
          <property name="title">
-          <string>Preferred Quality &amp; Formats</string>
+          <string>Preferred Quality &amp;&amp; Formats</string>
          </property>
          <layout class="QGridLayout" name="prefGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <property name="verticalSpacing">
-           <number>6</number>
+           <number>4</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lbl_pref_res">
@@ -555,6 +602,12 @@
           <string>Download Folders</string>
          </property>
          <layout class="QGridLayout" name="pathsGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item row="0" column="0">
            <widget class="QLineEdit" name="inp_dowload_path"/>
           </item>
@@ -577,11 +630,17 @@
        <item>
         <widget class="QGroupBox" name="groupTemplate">
          <property name="title">
-          <string>Output File &amp; Playlist Templates</string>
+          <string>Output File &amp;&amp; Playlist Templates</string>
          </property>
          <layout class="QGridLayout" name="templateGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <property name="verticalSpacing">
-           <number>6</number>
+           <number>4</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lbl_output_template">
@@ -599,6 +658,12 @@
           </item>
           <item row="0" column="2">
            <widget class="QPushButton" name="btn_reset_output_template">
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>30</height>
+             </size>
+            </property>
             <property name="text">
              <string>Reset to default</string>
             </property>
@@ -620,6 +685,12 @@
           </item>
           <item row="1" column="2">
            <widget class="QPushButton" name="btn_reset_playlist_indexing">
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>30</height>
+             </size>
+            </property>
             <property name="text">
              <string>Reset to default</string>
             </property>
@@ -651,11 +722,17 @@
        <item>
         <widget class="QGroupBox" name="groupLimits">
          <property name="title">
-          <string>Speed &amp; Simultaneous Limits</string>
+          <string>Speed &amp;&amp; Simultaneous Limits</string>
          </property>
          <layout class="QGridLayout" name="limitsGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <property name="verticalSpacing">
-           <number>6</number>
+           <number>4</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lblSimultaneous">
@@ -698,11 +775,41 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="chk_forceOverwrite">
-         <property name="text">
-          <string>Force overwrite existing file</string>
+        <layout class="QHBoxLayout" name="keepOverwriteHLayout">
+         <property name="spacing">
+          <number>71</number>
          </property>
-        </widget>
+         <item>
+          <widget class="QCheckBox" name="chk_forceOverwrite">
+           <property name="text">
+            <string>Force overwrite existing file</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBox">
+           <property name="text">
+            <string>Keep separate video and audio files</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="keepOverwriteSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QCheckBox" name="chk_awakeMode">
@@ -732,19 +839,19 @@
       </attribute>
       <layout class="QVBoxLayout" name="networkVLayout">
        <property name="spacing">
-        <number>8</number>
+        <number>4</number>
        </property>
        <property name="leftMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="topMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="rightMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <item>
         <widget class="QGroupBox" name="groupProxy">
@@ -752,6 +859,12 @@
           <string>Proxy Server Settings</string>
          </property>
          <layout class="QGridLayout" name="proxyGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item row="0" column="0">
            <widget class="QCheckBox" name="chk_use_proxy">
             <property name="text">
@@ -839,9 +952,15 @@
        <item>
         <widget class="QGroupBox" name="groupConnRetries">
          <property name="title">
-          <string>Connection &amp; Retries</string>
+          <string>Connection &amp;&amp; Retries</string>
          </property>
          <layout class="QGridLayout" name="connGrid">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lblSocketTimeout">
             <property name="text">
@@ -885,9 +1004,15 @@
        <item>
         <widget class="QGroupBox" name="groupBandwidthGeo">
          <property name="title">
-          <string>Bandwidth &amp; Geo-Restriction</string>
+          <string>Bandwidth &amp;&amp; Geo-Restriction</string>
          </property>
          <layout class="QHBoxLayout" name="geoHLayout">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QLabel" name="lblGeoBypass">
             <property name="text">
@@ -903,6 +1028,41 @@
             <property name="placeholderText">
              <string>e.g., US, GB, JP</string>
             </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupProtocolVer">
+         <property name="title">
+          <string> Protocol version </string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Internet Protocol Version</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="combo_ip_version">
+            <item>
+             <property name="text">
+              <string>Default</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>IPv4</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>IPv6</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
@@ -929,19 +1089,19 @@
       </attribute>
       <layout class="QVBoxLayout" name="cookiesMainLayout">
        <property name="spacing">
-        <number>8</number>
+        <number>4</number>
        </property>
        <property name="leftMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="topMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="rightMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>6</number>
        </property>
        <item>
         <layout class="QHBoxLayout" name="cookiesButtonsLayout">
@@ -1025,7 +1185,7 @@
           <item>
            <layout class="QHBoxLayout" name="manualBtnLayout">
             <property name="spacing">
-             <number>8</number>
+             <number>6</number>
             </property>
             <item>
              <spacer name="manualSpacer">
@@ -1075,7 +1235,7 @@
         <widget class="QWidget" name="container_cookie_file" native="true">
          <layout class="QHBoxLayout" name="fileLayout">
           <property name="spacing">
-           <number>8</number>
+           <number>6</number>
           </property>
           <property name="leftMargin">
            <number>0</number>
@@ -1114,7 +1274,7 @@
           <item>
            <widget class="QLabel" name="lbl_browser_warning">
             <property name="styleSheet">
-             <string notr="true">background-color: #3d2b00; color: #ffca28; border: 1px solid #ffb300; border-radius: 6px; padding: 10px;</string>
+             <string notr="true">background-color: #3d2b00; color: #ffca28; border: 1px solid #ffb300; border-radius: 6px; padding: 8px;</string>
             </property>
             <property name="text">
              <string>⚠️ yt-dlp reads the browser database directly. This can fail with Chromium browsers on Windows due to locking or encryption; the browser extension is recommended.</string>
@@ -1133,9 +1293,15 @@
        <item>
         <widget class="QGroupBox" name="groupCookieStatus">
          <property name="title">
-          <string>Status &amp; Quick Tools</string>
+          <string>Status &amp;&amp; Quick Tools</string>
          </property>
          <layout class="QVBoxLayout" name="cookieStatusVLayout">
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QLabel" name="lbl_cookie_status">
             <property name="text">
@@ -1149,12 +1315,18 @@
              <widget class="QPushButton" name="btn_get_cookie_ext">
               <property name="minimumSize">
                <size>
-                <width>160</width>
+                <width>210</width>
                 <height>30</height>
                </size>
               </property>
+              <property name="maximumSize">
+               <size>
+                <width>210</width>
+                <height>16777215</height>
+               </size>
+              </property>
               <property name="text">
-               <string>Get Cookie Extension</string>
+               <string>Get YawStar Smart Cookies</string>
               </property>
              </widget>
             </item>
@@ -1175,8 +1347,14 @@
              <widget class="QPushButton" name="btn_clear_cookies">
               <property name="minimumSize">
                <size>
-                <width>140</width>
+                <width>180</width>
                 <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
                </size>
               </property>
               <property name="text">
@@ -1204,12 +1382,367 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_pot_provider">
+      <attribute name="title">
+       <string>POT Provider</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="potProviderVLayout">
+       <property name="spacing">
+        <number>4</number>
+       </property>
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <property name="topMargin">
+        <number>6</number>
+       </property>
+       <property name="rightMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="groupPotServer">
+         <property name="title">
+          <string>POT Server Configuration</string>
+         </property>
+         <layout class="QVBoxLayout" name="potServerVLayout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="chk_enable_pot_server">
+            <property name="text">
+             <string>Enable Local POT Provider Server</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="statusRowLayout">
+            <item>
+             <widget class="QLabel" name="lbl_pot_server_status_title">
+              <property name="text">
+               <string>Server Status:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_pot_server_status_val">
+              <property name="text">
+               <string>Stopped</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="statusSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_toggle_pot_server">
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Start Server</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="portRowLayout">
+            <item>
+             <widget class="QLabel" name="lbl_pot_port">
+              <property name="text">
+               <string>Server Port:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="portSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="spin_pot_port">
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximum">
+               <number>65535</number>
+              </property>
+              <property name="value">
+               <number>4416</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupPotServerMgmt">
+         <property name="title">
+          <string>POT Server Management</string>
+         </property>
+         <layout class="QVBoxLayout" name="potServerMgmtVLayout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="potServerRow1">
+            <item>
+             <widget class="QLabel" name="lbl_pot_server_info_title">
+              <property name="text">
+               <string>Server Executable:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_pot_server_info_val">
+              <property name="text">
+               <string>Not Installed</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="potServerMgmtSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_download_pot_server">
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Download POT Server</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="pluginRow2">
+            <item>
+             <widget class="QLabel" name="lbl_pot_modules_title">
+              <property name="text">
+               <string>Server Modules / Dependencies:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_pot_modules_val">
+              <property name="text">
+               <string>~</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="pluginSpacer2">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_download_modules">
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Check Modules</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupPotPlugins">
+         <property name="title">
+          <string>POT Server Plugins</string>
+         </property>
+         <layout class="QVBoxLayout" name="potPluginsVLayout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="pluginRow1">
+            <item>
+             <widget class="QLabel" name="lbl_bgutil_plugin_title">
+              <property name="text">
+               <string>bgutil-ytdlp-pot Provider Plugin:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_bgutil_plugin_val">
+              <property name="text">
+               <string>Not Found</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="pluginSpacer1">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btn_download_plugin">
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Download Plugin</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextBrowser" name="txtOutputLog">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>150</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>150</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="potBottomSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="bottomButtonsLayout">
      <property name="spacing">
-      <number>10</number>
+      <number>8</number>
      </property>
      <item>
       <widget class="QPushButton" name="btn_restore">

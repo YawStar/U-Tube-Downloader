@@ -47,7 +47,7 @@ class DownloadWorker(QThread):
 
         # ✨ System Proxy အသုံးပြုနိုင်ရန် Session ပြင်ဆင်ခြင်း
         self.session = requests.Session()
-        self.session.trust_env = True  # System environment proxies (HTTP_PROXY / HTTPS_PROXY) ကို ယူသုံးမည်
+        self.session.trust_env = True  # System environment proxies (HTTP_PROXY / HTTPS_PROXY) ကို ယူသုံးမယ်
 
     def run(self):
         if not os.path.exists(self.target_dir):
@@ -102,7 +102,7 @@ class DownloadWorker(QThread):
             existing_file_size = os.path.getsize(path)
 
         headers = {}
-        # ရှိပြီးသားဖိုင်ဆိုဒ် ရှိနေရင် Range Header ထည့်မည်
+        # ရှိပြီးသားဖိုင်ဆိုဒ် ရှိနေရင် Range Header ထည့်မယ်
         if existing_file_size > 0:
             headers['Range'] = f"bytes={existing_file_size}-"
             self.log_signal.emit(f"⚙️ ဒေါင်းလက်စဖိုင် တွေ့ရှိသဖြင့် {existing_file_size / (1024*1024):.2f} MB မှ ဆက်လက်ဒေါင်းလုဒ်လုပ်နေသည်...")
@@ -110,10 +110,10 @@ class DownloadWorker(QThread):
         self.log_signal.emit(f"📥 Downloading: {filename}...")
         self.status_signal.emit(f"📥 Downloading: {filename}...")
         
-        # Session ကို အသုံးပြု၍ System Proxy ပါဝင်သော HTTP Request ပို့ခြင်း
+        # Session ကို အသုံးပြု၍ System Proxy ပါဝင်သော HTTP Request ပို့
         response = self.session.get(url, headers=headers, stream=True)
         
-        # 206 Partial Content ဆိုရင် အောင်မြင်စွာ ဆက်ဒေါင်းနိုင်ခြင်းဖြစ်ပြီး 200 ဆိုရင် အစကပြန်ဒေါင်းမည်
+        # 206 Partial Content ဆိုရင် အောင်မြင်စွာ ဆက်ဒေါင်းနိုင်ခြင်းဖြစ်ပြီး 200 ဆိုရင် အစကပြန်ဒေါင်းမယ်
         status_code = getattr(response, 'status_code', None) or getattr(response, 'status_color_code', 200)
         if status_code == 206:
             total_size = int(response.headers.get('content-length', 0)) + existing_file_size
@@ -175,7 +175,7 @@ class DownloadWorker(QThread):
         # 1. yt-dlp.exe
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("yt-dlp.exe"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] yt-dlp.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp.exe")
             self.download_file(yt_url, "yt-dlp.exe")
@@ -187,7 +187,7 @@ class DownloadWorker(QThread):
         has_ffprobe = self.is_file_valid("ffprobe.exe")
         
         if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg.exe နှင့် ffprobe.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] ffmpeg.exe နှင့် ffprobe.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             ff_api_url = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"
             ff_res = self.session.get(ff_api_url)
@@ -224,7 +224,7 @@ class DownloadWorker(QThread):
         # 3. deno.exe
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("deno.exe"):
-            self.log_signal.emit("⏩ [Skip] deno.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] deno.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             deno_url, deno_name = self.get_latest_github_release("denoland/deno", "x86_64-pc-windows-msvc.zip")
             deno_zip = self.download_file(deno_url, deno_name)
@@ -243,7 +243,7 @@ class DownloadWorker(QThread):
         # 1. yt-dlp 
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("yt-dlp"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp", reject_keyword=".exe")
             yt_path = self.download_file(yt_url, "yt-dlp")
@@ -256,7 +256,7 @@ class DownloadWorker(QThread):
         has_ffmpeg = self.is_file_valid("ffmpeg")
         has_ffprobe = self.is_file_valid("ffprobe")
         if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             ff_url = "https://ffbinaries.com/api/v1/version/latest"
             ff_res = self.session.get(ff_url).json()
@@ -286,7 +286,7 @@ class DownloadWorker(QThread):
         # 3. deno
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("deno"):
-            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             deno_url, deno_name = self.get_latest_github_release("denoland/deno", "x86_64-unknown-linux-gnu.zip")
             deno_zip = self.download_file(deno_url, deno_name)
@@ -305,7 +305,7 @@ class DownloadWorker(QThread):
         # 1. yt-dlp (macOS)
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("yt-dlp"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp_macos")
             yt_path = self.download_file(yt_url, "yt-dlp")
@@ -318,7 +318,7 @@ class DownloadWorker(QThread):
         has_ffmpeg = self.is_file_valid("ffmpeg")
         has_ffprobe = self.is_file_valid("ffprobe")
         if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             ff_url = "https://ffbinaries.com/api/v1/version/latest"
             ff_res = self.session.get(ff_url).json()
@@ -352,7 +352,7 @@ class DownloadWorker(QThread):
         # 3. deno (macOS)
         if not self._is_running: return
         if self.skip_existing and self.is_file_valid("deno"):
-            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပါ။")
+            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
             deno_target = "aarch64-apple-darwin.zip" if platform.machine() == "arm64" else "x86_64-apple-darwin.zip"
             deno_url, deno_name = self.get_latest_github_release("denoland/deno", deno_target)
@@ -442,6 +442,17 @@ class MainWindow(QMainWindow):
         self.btn_stop.clicked.connect(self.stop_download)
         
         self.worker = None
+        
+        # ✨ Main GUI ရဲ့ Center တည့်တည့်သို့ ရောက်ရှိစေရန် တွက်ချက်ခြင်း
+        if parent:
+            self.center_on_parent(parent)
+
+    def center_on_parent(self, parent):
+        """Parent Window ရဲ့ Center တည့်တည့်သို့ ရောက်အောင် နေရာချပေးသည့် Function"""
+        parent_geo = parent.geometry()
+        x = parent_geo.x() + (parent_geo.width() - self.width()) // 2
+        y = parent_geo.y() + (parent_geo.height() - self.height()) // 2
+        self.move(x, y)
 
     def closeEvent(self, event):
         if not self.btn_download.isEnabled():
@@ -469,7 +480,7 @@ class MainWindow(QMainWindow):
         if not os.path.exists(TPT_DIR):
             os.makedirs(TPT_DIR)
 
-        # Skip Checkbox အမှန်ခြစ်မထားပါက ဖိုင်ဟောင်းများကို ဖျက်ပစ်မည်
+        # Skip Checkbox အမှန်ခြစ်မထားပါက ဖိုင်ဟောင်းများကို ဖျက်ပစ်မယ်
         skip_existing = self.chk_skip_existing.isChecked()
         if not skip_existing:
             for item in os.listdir(TPT_DIR):

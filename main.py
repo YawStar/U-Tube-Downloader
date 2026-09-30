@@ -18,7 +18,7 @@ from PySide6.QtCore import (
     QCoreApplication, QUrl, QTimer,
 )
 from PySide6.QtGui import (
-    QDesktopServices, QPixmap, QMovie, QIcon, QFont,
+    QColor, QDesktopServices, QGuiApplication, QPixmap, QMovie, QIcon, QFont,
     QBitmap, QPainter, QCursor,
 )
 
@@ -46,7 +46,10 @@ APP_ID = f'{CONST.COMPANY_NAME}.{CONST.APP_NAME}.subproduct.{CONST.APP_VERSION}'
 from ui.ui_main import Ui_MainWindow
 
 # History UI
-from ui.ui_history import Ui_HistoryDialog
+from ui.history_dialog import Ui_HistoryDialog
+
+# Modern Update Dialog
+from ui.update_dialog import ModernUpdateDialog
 
 # Config
 from core.config_manager import ConfigManager
@@ -99,8 +102,14 @@ from core.constants import (
     ConfigKey, StatusMsg, UiState, ResourcePath, Timing,
 )
 
-# main.py — imports
+# Fonts Services
 from core.services.font_service import FontService
+
+# POT Server Services
+from utils.pot_server import POTServerThread
+
+# Update Checker
+from core.services.update_checker import UpdateCheckerThread
 
 # ============================================================================
 # Setup: QCoreApplication metadata
@@ -130,7 +139,6 @@ if not os.path.exists(TPT_DIR):
     os.makedirs(TPT_DIR)
 
 CONFIG_PATH = os.path.normpath(os.path.join(APP_DATA_DIR, "config.json"))
-
 DB_PATH = os.path.normpath(os.path.join(APP_DATA_DIR, "history.db"))
 
 
@@ -139,13 +147,11 @@ DB_PATH = os.path.normpath(os.path.join(APP_DATA_DIR, "history.db"))
 # ============================================================================
 LOG_FILE = os.path.normpath(os.path.join(APP_DATA_DIR, "app.log"))
 setup_logging(log_file=LOG_FILE, level=10)  # DEBUG level
-
-# Module logger
 logger = get_logger(__name__)
 logger.info(f"=== {CONST.APP_NAME} {CONST.APP_VERSION} starting ===")
 
 # ============================================================================
-# Launch state
+# ပထမဆုံး Run တာလားစစ်ဆေး
 # ============================================================================
 is_first_launch = not os.path.exists(CONFIG_PATH)
 
@@ -162,7 +168,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
-        # ⭐ Font apply — Designer ရဲ့ font ကို override
+        # Config Manager ကို Init လုပ်
+        self.config_mgr = ConfigManager(CONFIG_PATH)
+
+        # =====================================================================
+        # 📐 Window Position & Size ကို ပြန် Restore လုပ်မည်
+        # =====================================================================
+        self.load_window_state()
+
+        # =====================================================================
+        # ⬇️ [CHANGED] POT Server Manager ကို MainWindow မှာ ထား
+        # SettingsDialog က ဒီ pot_mgr ကို ချိတ်သုံးမယ်
+        # =====================================================================
+        self.pot_mgr = POTServerThread(tools_dir=TPT_DIR)
+        self.pot_mgr.started_signal.connect(self.on_pot_server_started)
+        self.pot_mgr.stopped_signal.connect(self.on_pot_server_stopped)
+        self.pot_mgr.log_signal.connect(self.on_pot_server_log)
+        # self.pot_mgr.health_signal.connect(self.on_pot_server_health)
+
+        # Settings Dialog reference (busy ဖြစ်နေရင် ပိတ်ဖို့ လိုအပ်တဲ့အခါ သုံး)
+        self.settings_dialog = None
+
+        # Cleanup flag (တစ်ခါပဲ cleanup လုပ်ဖို့)
+        self._cleanup_done = False
+
+        # Font apply — Designer ရဲ့ font ကို override
         myanmar_family = FontService.get_family(
             ":/fonts/fonts/pyidaungsu.ttf", fallback="sans-serif"
         )
@@ -175,6 +205,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         app_icon = QIcon(ResourcePath.APP_ICON)
         self.setWindowIcon(app_icon)
 
+        from ui.circular_spiner import MaterialSpinner
+
+        # lblThumbnail ရဲ့ ကလေး (Child Widget) အဖြစ် ဖန်တီးမည်
+        self.spinner = MaterialSpinner(self.lblThumbnail, size=100, line_width=10, color=QColor("#3B82F6"))
+        self.spinner.hide()  # စစချင်း ဖျောက်ထားမည်
+
         # =====================================================================
         # Tips Rotation
         # =====================================================================
@@ -184,7 +220,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "ℹ️ Having download issues? Go to Settings to configure cookies or update yt-dlp.",
             "😊 Choose video-only or audio-only mode to download as needed.",
             "🖼️ Right-click on the thumbnail to save it.",
+            "🕹️ If fetching time is so long, change IPv4.",
             "🧊 Click uploader name to visit the channel.",
+            "😎 If you got only 360p resolution turn POT Server and try again!",
             "♦️You can stop fetching or downloading anytime.",
             "❤️ Support the developer to help improve this program.",
         ]
@@ -322,9 +360,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.useMTimeButton.setChecked(
             bool(loaded_settings.get(ConfigKey.USE_MTIME))
         )
+        self.skipSponsorsButton.setChecked(
+            bool(loaded_settings.get(ConfigKey.SKIP_SPONSORS_BLOCK))
+        )
 
         self.progressBar.setVisible(False)
-        self.show_option_controls_status(False)
+        self.set_option_controls_status(False)
         self.is_marquee = False
         self.selectFormatsButton.setEnabled(False)
         self.downloadButton.setEnabled(False)
@@ -335,8 +376,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # =====================================================================
         self.tray_icon = None
         self.setup_tray_icon()
-
-        # self.notification_service = NotificationService(self.tray_icon, self)
         self.notification_service = NotificationService(self)
 
         if self.tray_icon:
@@ -357,12 +396,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.auto_add_from_clipboard_action.setChecked(
                 bool(loaded_settings.get(ConfigKey.ADD_LINKS_CLIPBOARD))
             )
-            
 
             # (Separator) ခြား
             tray_menu.addSeparator()
 
             show_action = tray_menu.addAction("Show Window")
+            
+            # (Separator) ခြား
+            tray_menu.addSeparator()
+
+            check_update_action = tray_menu.addAction("Check for update")
+            check_update_action.triggered.connect(lambda: self.check_for_updates(silent=False))
+
+            # (Separator) ခြား
+            tray_menu.addSeparator()
+
             exit_action = tray_menu.addAction("Quit")
 
             paste_link_action.triggered.connect(self.paste_link)
@@ -398,15 +446,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.check_and_toggle_clipboard_monitor()
 
         # =====================================================================
+        # Always on top
+        # =====================================================================
+        is_always_on_top = loaded_settings.get("always_on_top", False)
+        if is_always_on_top:
+            self.toggle_on_top(True)
+        else:
+            self.toggle_on_top(False)
+
+        # =====================================================================
         # Signals & Slots
         # =====================================================================
-        self.getInfoButton.clicked.connect(self.on_get_info_clicked)
-        self.downloadButton.clicked.connect(self.on_download_clicked)
         self.historyButton.clicked.connect(self.on_history_clicked)
         self.pasteButton.clicked.connect(self.on_paste_clicked)
-        self.openFolderButton.clicked.connect(self.on_open_folder_clicked)
+        self.getInfoButton.clicked.connect(self.on_fetch_info_clicked)
         self.selectFormatsButton.clicked.connect(self.on_select_formats_clicked)
         self.settingsButton.clicked.connect(self.on_settings_clicked)
+        self.openFolderButton.clicked.connect(self.on_open_folder_clicked)
+        self.downloadButton.clicked.connect(self.on_download_clicked)
         self.aboutButton.clicked.connect(self.on_about_button_clicked)
 
         # Thumbnail right-click
@@ -419,6 +476,120 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.statusbar.showMessage(StatusMsg.READY)
         logger.info("MainWindow initialized")
+
+        # Settings မှာ Auto Update Check ကိုရွေးထားလား စစ်ဆေး
+        if loaded_settings.get("check_auto_update", True):
+            # App စတင်ပြီး 3 စက္ကန့်အကြာတွင် Background မှ တိတ်တဆိတ် Update စစ်ပေးမည် (Silent Check)
+            QTimer.singleShot(3000, lambda: self.check_for_updates(silent=True))
+
+    def on_pot_server_started(self, success: bool, message: str):
+        """ POT Server စတင်ပြီးချိန် MainWindow က လက်ခံ """
+        if success:
+            logger.info(f"🖲️-✅ MainWindow: {message}")
+        else:
+            logger.error(f"🖲️-❌ MainWindow: {message}")
+
+    def on_pot_server_stopped(self, success: bool, message: str):
+        """ POT Server ရပ်သွားချိန် MainWindow က လက်ခံ """
+        if success:
+            logger.info(f"🖲️-☑️ MainWindow: {message}")
+        else:
+            logger.error(f"🖲️-❌ MainWindow: {message}")
+
+    def on_pot_server_log(self, text: str):
+        """ POT Server log ကို MainWindow logger ဆီ ပို့ """
+        logger.debug(f"🖲️ [POT] {text}")
+
+    def on_pot_server_health(self, healthy: bool, latency_ms: float):
+        """ POT Server health check ရလဒ် """
+        if healthy:
+            logger.debug(f"🖲️-💚 POT healthy ({latency_ms:.0f}ms)")
+        else:
+            logger.warning("🖲️-💔 POT unreachable")
+
+    def load_window_state(self):
+        """ config.json မှ Window Size နဲ့ Position ကို ပြန်ဖတ်ပြီး Restore လုပ်မယ် """
+        if not self.config_mgr.get("remember_win_pos_size", True):
+            return
+
+        try:
+            top = self.config_mgr.get("top")
+            left = self.config_mgr.get("left")
+            width = self.config_mgr.get("width", 850)
+            height = self.config_mgr.get("height", 630)
+            is_maximized = self.config_mgr.get("is_maximized", False)
+
+            if is_maximized:
+                self.showMaximized()
+                return
+
+            # Default Size သတ်မှတ်ခြင်း
+            self.resize(width, height)
+
+            # Saved Position ရှိခဲ့လျှင် Screen Bounds ထဲမှာ ရှိမရှိ စစ်ဆေးပြီးမှ ရွှေ့မယ်
+            if left is not None and top is not None:
+                # လက်ရှိ Active ဖြစ်နေသော Screen ရဲ့ Available Bounds ကိုယူမည်
+                screen = self.screen() or QGuiApplication.primaryScreen()
+                if screen:
+                    screen_geo = screen.availableGeometry()
+
+                    # Window ရဲ့ Position က Screen မြင်ကွင်းအတွင်းမှာ ရှိမရှိ စစ်စရာ (Off-screen မဖြစ်စေရန်)
+                    # Window ရဲ့ Top-Left ထောင့်သည် Screen အတွင်း၌ ရှိနေရမယ်
+                    if (screen_geo.left() <= left <= screen_geo.right() - 50 and
+                        screen_geo.top() <= top <= screen_geo.bottom() - 50):
+                        self.move(left, top)
+                    else:
+                        logger.warning("Saved window position is out of screen bounds. Resetting to default center.")
+        except Exception as e:
+            logger.error(f"Failed to load window state: {e}")
+
+    def save_window_state(self):
+        """ Window ရဲ့ လက်ရှိ Position နဲ့ Size ကို config.json ထဲ သိမ်းမယ် """
+        if not self.config_mgr.get("remember_win_pos_size", True):
+            return
+
+        try:
+            is_maximized = self.isMaximized()
+
+            # Window Maximized ဖြစ်နေချိန် ပိတ်လျှင် Normal Geometry (Restore Rect) ကို ယူရမယ်
+            if is_maximized:
+                normal_geo = self.normalGeometry()
+                left = normal_geo.x()
+                top = normal_geo.y()
+                width = normal_geo.width()
+                height = normal_geo.height()
+            else:
+                # Frame (Titlebar + Borders) ပါဝင်သော X, Y Position ကိုယူရန် frameGeometry သို့မဟုတ် pos/geometry သုံးနိုင်
+                left = self.x()
+                top = self.y()
+                width = self.width()
+                height = self.height()
+
+            # ConfigManager သို့ သိမ်းဆည်းခြင်း
+            self.config_mgr.update_multiple({
+                "left": left,
+                "top": top,
+                "width": width,
+                "height": height,
+                "is_maximized": is_maximized
+            })
+            logger.info(f"Saved window state: x={left}, y={top}, w={width}, h={height}, max={is_maximized}")
+        except Exception as e:
+            logger.error(f"Failed to save window state: {e}")
+
+    def toggle_on_top(self, enable: bool):
+        """ Always on Top Mode ကို Window Buttons တွေ မပျောက်ဘဲ Switch လုပ်"""
+        # Base Window Type နှင့် Close/Min/Max Buttons များကို ထိန်းသိမ်းထား
+        flags = Qt.Window
+
+        if enable:
+            flags |= Qt.WindowStaysOnTopHint
+
+        # Window Flags အသစ်ကို Apply လုပ်
+        self.setWindowFlags(flags)
+
+        # Window မပျောက်သွားစေရန်နှင့် Buttons တွေ Active ဖြစ်စေရန် ပြန်ပြပေး
+        self.show()
 
     # =========================================================================
     # Tips Rotation
@@ -453,9 +624,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dep_window.show()
 
     # =========================================================================
-    # Close / Exit
+    # ❌ Close / Exit
     # =========================================================================
     def closeEvent(self, event):
+        print("Running closeEvent Method")
+        # 💾 Window State ကို အရင်သိမ်း
+        self.save_window_state()
         is_info_running = self.fetch_controller.is_running()
         is_download_running = self.download_controller.is_running()
 
@@ -463,64 +637,171 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if loaded_settings.get(ConfigKey.MINIMIZE_TO_TRAY, True):
             event.ignore()
             self.hide()
-            if self.tray_icon:
-                if is_info_running or is_download_running:
-                    self.notification_service.send_notification(
-                        "Running in Background",
-                        "Tasks are still running in the system tray."
-                    )
+            if self.tray_icon and (is_info_running or is_download_running):
+                self.notification_service.send_notification(
+                    "Running in Background",
+                    "Tasks are still running in the system tray."
+                )
         else:
+            # System Tray မဟုတ်ဘဲ အပြီးသတ် Exit ပိတ်မည့် Logic
             if is_info_running or is_download_running:
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("Confirm Exit")
-                msg_box.setText(
-                    "1 videos are currently in progress.\n\n"
-                    "Do you want to stop them and quit?"
-                )
-                msg_box.setIcon(QMessageBox.Icon.Question)
+                # Cancel confirmations...
+                pass
 
-                yes_button = msg_box.addButton(
-                    "Yes", QMessageBox.ButtonRole.YesRole
-                )
-                no_button = msg_box.addButton(
-                    "No", QMessageBox.ButtonRole.NoRole
-                )
+            # Thread အားလုံးကို ရပ်
+            self._cleanup_all_threads()
 
-                msg_box.setStyleSheet("""
-                    QPushButton {
-                        font-size: 13px;
-                        padding: 5px 15px;
-                        min-width: 60px;
-                        max-width: 80px;
-                        min-height: 20px;
-                        max-height: 30px;
-                    }
-                    QMessageBox {
-                        min-width: 300px;
-                    }
-                """)
+            if self.tray_icon:
+                self.tray_icon.hide()
 
-                msg_box.exec()
+            logger.info("Application exit — processes stopped")
+            event.accept()
 
-                if msg_box.clickedButton() == yes_button:
-                    if is_info_running:
-                        self.fetch_controller.cancel()
-                    if is_download_running:
-                        self.download_controller.cancel()
+    def _cleanup_all_threads(self):
+        """ App ပိတ်ချိန်မှာ thread အားလုံးကို ရပ် """
+        
+        if self._cleanup_done:
+            logger.debug("Cleanup already done — skipping")
+            return
+        self._cleanup_done = True
 
-                    if is_info_running:
-                        self.fetch_controller.process.waitForFinished(1000)
-                    if is_download_running:
-                        self.download_controller.process.waitForFinished(1000)
+        logger.info("Cleaning up all threads...")
 
-                    if self.tray_icon:
-                        self.tray_icon.hide()
-                    logger.info("Application exit — processes stopped")
-                    event.accept()
-                else:
-                    event.ignore()
+        # ၁။ MainWindow ရဲ့ POT Server thread
+        if hasattr(self, 'pot_mgr') and self.pot_mgr:
+            try:
+                if self.pot_mgr.isRunning():
+                    # Health checker ရပ်
+                    if hasattr(self.pot_mgr, '_health') and self.pot_mgr._health:
+                        try:
+                            self.pot_mgr._health.stop()
+                            self.pot_mgr._health.wait(1500)
+                        except Exception:
+                            pass
+                        self.pot_mgr._health = None
+
+                    # Output reader ရပ်
+                    if hasattr(self, 'pot_mgr') and hasattr(self.pot_mgr, '_reader') and self.pot_mgr._reader:
+                        try:
+                            self.pot_mgr._reader.stop()
+                            self.pot_mgr._reader.wait(1500)
+                        except Exception:
+                            pass
+                        self.pot_mgr._reader = None
+
+                    # Stop flag သတ်
+                    self.pot_mgr._stop_requested_flag = True
+                    self.pot_mgr._is_running = False
+
+                    # Process သတ်
+                    try:
+                        import requests as _req
+                        _req.post(f"{self.pot_mgr.server_url}/shutdown", timeout=0.5)
+                    except Exception:
+                        pass
+
+                    if self.pot_mgr.process and self.pot_mgr.process.poll() is None:
+                        self.pot_mgr.process.terminate()
+                        try:
+                            self.pot_mgr.process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            self.pot_mgr.process.kill()
+                    self.pot_mgr.process = None
+
+                    # Port fallback kill
+                    try:
+                        POTServerThread.kill_process_on_port(4416)
+                    except Exception:
+                        pass
+
+                    # Thread ကို ကိုယ်တိုင် ရပ်
+                    self.pot_mgr.quit()
+                    if not self.pot_mgr.wait(2000):
+                        logger.warning("POTServerThread did not stop — terminating")
+                        self.pot_mgr.terminate()
+                        self.pot_mgr.wait(1000)
+
+                    logger.info("Stopped MainWindow pot_mgr")
+            except Exception as e:
+                logger.error(f"Error stopping MainWindow pot_mgr: {e}")
+
+        # ၂။ SettingsDialog ရဲ့ threads (Dialog ဖွင့်နေသေးရင်)
+        if hasattr(self, 'settings_dialog') and self.settings_dialog:
+            try:
+                self._cleanup_settings_dialog_threads(self.settings_dialog)
+            except Exception as e:
+                logger.error(f"Settings dialog cleanup failed: {e}")
+
+        # ၃။ MainWindow ရဲ့ Update Checker
+        if hasattr(self, 'update_thread') and self.update_thread:
+            try:
+                if self.update_thread.isRunning():
+                    self.update_thread.quit()
+                    if not self.update_thread.wait(1500):
+                        self.update_thread.terminate()
+                        self.update_thread.wait(500)
+                    logger.info("Stopped update checker thread")
+            except Exception as e:
+                logger.error(f"Error stopping update thread: {e}")
+
+        # ၄။ Clipboard Monitor
+        if hasattr(self, 'clipboard_thread') and self.clipboard_thread:
+            try:
+                self.clipboard_thread.stop()
+                if hasattr(self.clipboard_thread, 'isRunning') and self.clipboard_thread.isRunning():
+                    self.clipboard_thread.wait(1000)
+                self.clipboard_thread = None
+                logger.info("Stopped clipboard monitor")
+            except Exception as e:
+                logger.error(f"Error stopping clipboard monitor: {e}")
+
+        # ၅။ Fetch Controller
+        if hasattr(self, 'fetch_controller') and self.fetch_controller:
+            try:
+                if self.fetch_controller.is_running():
+                    self.fetch_controller.cancel()
+                    QApplication.processEvents()
+            except Exception as e:
+                logger.error(f"Error stopping fetch controller: {e}")
+
+        # ၆။ Download Controller
+        if hasattr(self, 'download_controller') and self.download_controller:
+            try:
+                if self.download_controller.is_running():
+                    self.download_controller.cancel()
+                    QApplication.processEvents()
+            except Exception as e:
+                logger.error(f"Error stopping download controller: {e}")
+
+        logger.info("All threads cleanup completed")
+
+    def _cleanup_settings_dialog_threads(self, dialog):
+        """Settings Dialog ရဲ့ background threads အားလုံးကို ရပ်"""
+        try:
+            thread_attrs = (
+                'pot_dl_thread', 'plugin_dl_thread',
+                'module_downloader', 'update_thread', '_stop_worker'
+            )
+            for attr in thread_attrs:
+                thread = getattr(dialog, attr, None)
+                if thread and hasattr(thread, 'isRunning') and thread.isRunning():
+                    try:
+                        if hasattr(thread, 'stop'):
+                            thread.stop()
+                        thread.quit()
+                        if not thread.wait(1500):
+                            thread.terminate()
+                            thread.wait(500)
+                        logger.info(f"Stopped settings dialog thread: {attr}")
+                    except Exception as e:
+                        logger.error(f"Error stopping {attr}: {e}")
+        except Exception as e:
+            logger.error(f"Settings dialog threads cleanup failed: {e}")
 
     def fully_exit_app(self):
+        print("Running fully)exit_app Method")
+        # 💾 Window State ကို အရင်သိမ်း
+        self.save_window_state()
         is_info_running = self.fetch_controller.is_running()
         is_download_running = self.download_controller.is_running()
 
@@ -531,8 +812,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             global loaded_settings
             loaded_settings[ConfigKey.MINIMIZE_TO_TRAY] = False
+
+            # Thread အားလုံးကို ရပ်
+            self._cleanup_all_threads()
+
             if self.tray_icon:
                 self.tray_icon.hide()
+
             self.close()
             logger.info("Application fully exited")
             QApplication.quit()
@@ -586,6 +872,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             logger.error(f"Error loading default thumbnail: {e}")
             self.lblThumbnail.setText("[ Load Error ]")
 
+    def center_spinner(self):
+        """ Spinner ကို lblThumbnail ရဲ့ ဗဟိုတည့်တည့်သို့ ရွှေ့ပေးမယ် """
+        if hasattr(self, "spinner") and self.lblThumbnail:
+            x = (self.lblThumbnail.width() - self.spinner.width()) // 2
+            y = (self.lblThumbnail.height() - self.spinner.height()) // 2
+            self.spinner.move(x, y)
+
+    def resizeEvent(self, event):
+        """ Window Size ပြောင်းရင် Spinner အလယ်တည့်တည့်မှာ ရှိနေစေရန် """
+        super().resizeEvent(event)
+        self.center_spinner()
+
     # =========================================================================
     # Marquee Progressbar
     # =========================================================================
@@ -613,7 +911,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not match:
             return
         self.urlInput.setText(clipboard.text().strip())
-        self.on_get_info_clicked()
+        self.on_fetch_info_clicked()
 
     def paste_link(self):
         clipboard = QApplication.clipboard()
@@ -632,14 +930,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.fetch_controller.cancel()
             return
         else:
-            self.on_get_info_clicked()
+            self.on_fetch_info_clicked()
 
     def on_history_clicked(self):
         history_records = self.db_mgr.get_all_history()
 
         # db_mgr parameter ပါ ထည့်ပေးလိုက်ပါ
         dialog = HistoryDialog(self, history_records=history_records, db_mgr=self.db_mgr)
-        
+
         if dialog.exec() == QDialog.Accepted:
             selected_url = dialog.get_selected_url()
             if selected_url:
@@ -649,15 +947,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # Settings / About
     # =========================================================================
     def on_Goto_Settings_Clicked(self):
-        dialog = SettingsDialog(self.config_mgr, self, initial_tab=3)
-        dialog.exec()
+        # [CHANGED] MainWindow ရဲ့ pot_mgr ကို SettingsDialog ဆီ ပို့
+        dialog = SettingsDialog(
+            self.config_mgr, self,
+            initial_tab=3,
+            pot_mgr=self.pot_mgr
+        )
+        self.settings_dialog = dialog
+        try:
+            dialog.exec()
+        finally:
+            self.settings_dialog = None
 
-    def on_settings_clicked(self):
+    def on_settings_clicked_old(self):
         if self.clipboard_thread:
             self.clipboard_thread.stop()
 
         global loaded_settings
-        dialog = SettingsDialog(self.config_mgr, self, initial_tab=0)
+        dialog = SettingsDialog(self.config_mgr, self, initial_tab=None)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             loaded_settings = self.config_mgr.get_all()
@@ -665,12 +972,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # Config ထဲမှ နောက်ဆုံး စာရင်းသွင်းထားသော တန်ဖိုးကို ယူခြင်း
             is_auto_add = self.config_mgr.get("add_links_clipboard", False)
-            print(f"Clipboard Monitor is: {is_auto_add}")
 
             # Tray Menu Action ၏ Checked state ကို Sync လုပ်ခြင်း
             if hasattr(self, 'auto_add_from_clipboard_action'):
                 self.auto_add_from_clipboard_action.setChecked(is_auto_add)
-                print("hasattr statement is executed.")
 
             self.statusbar.showMessage(StatusMsg.SETTINGS_SAVED)
             self.statusbar.showMessage(StatusMsg.READY)
@@ -681,6 +986,51 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             if self.clipboard_thread:
                 self.clipboard_thread.start()
+
+    def on_settings_clicked(self):
+        if self.clipboard_thread:
+            self.clipboard_thread.stop()
+
+        global loaded_settings
+        # Dialog မဖွင့်ခင် လက်ရှိ config value ကို အရင်မှတ်ထားခြင်း
+        previous_always_on_top_status = self.config_mgr.get("always_on_top", False)
+
+        # [CHANGED] MainWindow ရဲ့ pot_mgr ကို SettingsDialog ဆီ ပို့
+        dialog = SettingsDialog(
+            self.config_mgr, self,
+            initial_tab=None,
+            pot_mgr=self.pot_mgr
+        )
+        self.settings_dialog = dialog
+
+        try:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                loaded_settings = self.config_mgr.get_all()
+                self.check_and_toggle_clipboard_monitor()
+
+                # Config ထဲမှ နောက်ဆုံး စာရင်းသွင်းထားသော တန်ဖိုးကို ယူခြင်း
+                is_auto_add = self.config_mgr.get("add_links_clipboard", False)
+
+                # Tray Menu Action ၏ Checked state ကို Sync လုပ်ခြင်း
+                if hasattr(self, 'auto_add_from_clipboard_action'):
+                    self.auto_add_from_clipboard_action.setChecked(is_auto_add)
+
+                self.statusbar.showMessage(StatusMsg.SETTINGS_SAVED)
+                self.statusbar.showMessage(StatusMsg.READY)
+                logger.info("Settings updated")
+        finally:
+            self.settings_dialog = None
+
+        if hasattr(self, 'check_and_toggle_clipboard_monitor'):
+            self.check_and_toggle_clipboard_monitor()
+        else:
+            if self.clipboard_thread:
+                self.clipboard_thread.start()
+
+        # Current Always On Top ကို ပြန်စစ်ခြင်း
+        current_always_on_top_status = self.config_mgr.get("always_on_top", False)
+        if previous_always_on_top_status != current_always_on_top_status:  # မတူဘူးဆိုရင်
+            self.toggle_on_top(current_always_on_top_status)  # အရင် value နဲ့ မတူဘူးဆိုမှ ပြောင်းလဲ
 
     def on_about_button_clicked(self):
         about_dialog = ui.about.AboutDialog(self)
@@ -722,8 +1072,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_success = True
         self.thumbnail_failed = False
 
-        if hasattr(self, "movie") and self.movie:
-            self.movie.stop()
+        # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+        self.spinner.stop()
 
         self.lblThumbnail.setMovie(None)
         self.lblThumbnail.clear()
@@ -739,8 +1089,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_success = False
         self.thumbnail_failed = True
 
-        if hasattr(self, "movie") and self.movie:
-            self.movie.stop()
+        # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+        self.spinner.stop()
 
         self.lblThumbnail.setMovie(None)
         self.display_default_thumbnail()
@@ -801,12 +1151,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.getInfoButton.style().polish(self.getInfoButton)
         self.getInfoButton.update()
 
-        if hasattr(self, "movie") and self.movie:
-            self.movie.stop()
-
         self.info = info
 
-        # ⭐ [SQLite] Fetch ရရှိထားသော Video Info နှင့် URL အား Database ထဲသို့ သိမ်းဆည်းခြင်း
+        # [SQLite] Fetch ရရှိထားသော Video Info နှင့် URL အား Database ထဲသို့ သိမ်းဆည်း
         current_url = self.urlInput.text().strip()
         if current_url and isinstance(info, dict):
             self.db_mgr.save_or_update_fetch(current_url, info)
@@ -830,8 +1177,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.getInfoButton.style().polish(self.getInfoButton)
         self.getInfoButton.update()
 
-        if hasattr(self, "movie") and self.movie:
-            self.movie.stop()
+        # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+        self.spinner.stop()
 
         self.statusbar.showMessage(StatusMsg.FETCH_FAILED)
         self.lblThumbnail.setMovie(None)
@@ -872,13 +1219,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.taskbar_service.reset()
 
     def on_fetch_cookies_required(self):
-        """FetchController.cookies_required"""
+        """ FetchController.cookies_required """
         self.getInfoButton.setText("Fetch Info")
         self.getInfoButton.setEnabled(True)
         self.getInfoButton.setProperty("working", False)
         self.getInfoButton.style().unpolish(self.getInfoButton)
         self.getInfoButton.style().polish(self.getInfoButton)
         self.getInfoButton.update()
+
+        # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+        self.spinner.stop()
 
         self.lblThumbnail.setMovie(None)
         self.display_default_thumbnail()
@@ -897,33 +1247,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ✨ Phase 3 — DownloadController signal handlers
     # =========================================================================
     def on_download_started(self):
-        """DownloadController.download_started"""
+        """ DownloadController.download_started """
         pass
 
     def on_download_log(self, log_text):
-        """DownloadController.download_log"""
+        """ DownloadController.download_log """
         self.txtInfoLog.insertPlainText(log_text)
         self.txtInfoLog.ensureCursorVisible()
 
     def on_download_destination_changed(self, path):
-        """DownloadController.download_destination_changed"""
+        """ DownloadController.download_destination_changed """
         self.final_downloaded_path = path
         self.taskbar_service.reset()
         self.taskbar_service.set_downloading(0, 100, "downloading")
         logger.debug(f"Download destination: {path}")
 
     def on_download_progress(self, percent, status_text):
-        """DownloadController.download_progress"""
+        """ DownloadController.download_progress """
         if self.is_marquee:
             self.marquee_progressbar(False)
             self.is_marquee = False
-            
+
         self.progressBar.setValue(percent)
         self.statusbar.showMessage(status_text)
         self.taskbar_service.set_downloading(percent, 100, "downloading")
 
     def on_download_indeterminate(self):
-        """DownloadController.download_indeterminate"""
+        """ DownloadController.download_indeterminate """
         if not self.is_marquee:
             self.marquee_progressbar(True)
             self.is_marquee = True
@@ -931,21 +1281,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.taskbar_service.set_indeterminate()
 
     def on_download_progress_resumed(self):
-        """DownloadController.download_progress_resumed — marquee ရပ်"""
+        """ DownloadController.download_progress_resumed — marquee ရပ် """
         if self.is_marquee:
             self.marquee_progressbar(False)
             self.is_marquee = False
 
     def on_download_completed(self, final_path):
-        """DownloadController.download_completed"""
+        """ DownloadController.download_completed """
         self.final_downloaded_path = final_path
 
-        # ⭐ [SQLite] Download Success ဖြစ်ကြောင်း DB ထဲမှာ Status Update လုပ်ခြင်း
+        # [SQLite] Download Success ဖြစ်ကြောင်း DB ထဲမှာ Status Update လုပ်
         current_url = self.urlInput.text().strip()
         if current_url:
             self.db_mgr.update_download_status(
-                url=current_url, 
-                status="Completed", 
+                url=current_url,
+                status="Completed",
                 file_path=final_path
             )
 
@@ -995,13 +1345,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     )
 
     def on_download_failed(self, error_message):
-        """DownloadController.download_failed"""
-        # ⭐ [SQLite] Download Error ဖြစ်ကြောင်း DB ထဲမှာ Status Update လုပ်ခြင်း
+        """ DownloadController.download_failed """
+        # [SQLite] Download Error ဖြစ်ကြောင်း DB ထဲမှာ Status Update လုပ်
         current_url = self.urlInput.text().strip()
         if current_url:
             self.db_mgr.update_download_status(
-                url=current_url, 
-                status="Error", 
+                url=current_url,
+                status="Error",
                 error_msg=error_message
             )
 
@@ -1033,12 +1383,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             logger.error(f"Download failed: {error_message}")
 
     def on_download_cancelled(self):
-        """DownloadController.download_cancelled"""
-        # ⭐ [SQLite] User ဘက်မှ Download ကို မပြီးမီ Cancel လုပ်လိုက်ကြောင်း Update လုပ်ခြင်း
+        """ DownloadController.download_cancelled """
+        # [SQLite] User ဘက်မှ Download ကို မပြီးမီ Cancel လုပ်လိုက်ကြောင်း Update လုပ်
         current_url = self.urlInput.text().strip()
         if current_url:
             self.db_mgr.update_download_status(
-                url=current_url, 
+                url=current_url,
                 status="Cancelled"
             )
 
@@ -1067,7 +1417,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         logger.info("Download cancelled by user")
 
     # =========================================================================
-    # FETCH INFO
+    # 🔍 FETCH INFO
     # =========================================================================
     def show_cookies_required_dialog(self):
         self.statusbar.showMessage("Cookies Verification Required")
@@ -1094,7 +1444,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "YawStar Cookies Exporter</a>."
         )
 
-        # Corrected: TextInteractionFlags တွင် Interaction Flag ကိုသာ ထည့်သွင်းပေးရပါမည်
+        # TextInteractionFlags တွင် Interaction Flag ကိုသာ ထည့်သွင်း
         msg_box.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
         )
@@ -1116,8 +1466,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if msg_box.clickedButton() == settings_button:
             self.on_Goto_Settings_Clicked()
-            
-    def on_get_info_clicked(self):
+
+    def on_fetch_info_clicked(self):
         """Fetch Info — FetchController ကို delegate"""
         self.stop_tips_rotation()
 
@@ -1126,6 +1476,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.statusbar.showMessage(StatusMsg.CANCELLING_FETCH)
             self.getInfoButton.setEnabled(False)
             self.fetch_controller.cancel()
+            # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+            self.spinner.stop()
             return
 
         # Dependencies check
@@ -1208,54 +1560,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.getInfoButton.style().polish(self.getInfoButton)
         self.getInfoButton.update()
 
-        # self.paste_link_action.setEnabled(False)
+        # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+        self.lblThumbnail.clear()
+        self.spinner.stop()
+        self.spinner.start()
 
-        # Loading GIF
-        gif_path = ResourcePath.LOADING_GIF
-
-        if hasattr(self, "movie") and self.movie:
-            self.movie.stop()
-
-        self.movie = QMovie(gif_path)
-
-        if self.movie.isValid():
-            self.lblThumbnail.setPixmap(QPixmap())
-            self.lblThumbnail.setScaledContents(False)
-            self.movie.jumpToFrame(0)
-
-            original_size = self.movie.frameRect().size()
-            if original_size.height() > 0:
-                scale_factor = 0.7
-                target_h = int(self.lblThumbnail.height() * scale_factor)
-                aspect_ratio = original_size.width() / original_size.height()
-                target_w = int(target_h * aspect_ratio)
-                self.movie.setScaledSize(QSize(target_w, target_h))
-            else:
-                self.movie.setScaledSize(QSize(64, 64))
-
-            self.lblThumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.lblThumbnail.setMovie(self.movie)
-            self.movie.start()
-        else:
-            self.lblThumbnail.setMovie(None)
-            self.lblThumbnail.setText("Fetching data...")
-
-        # Config
-        try:
-            with open(CONFIG_PATH, "r", encoding="utf-8") as file:
-                loaded_settings = json.load(file)
-        except Exception as e:
-            logger.error(f"Error loading config: {e}")
-            loaded_settings = {}
-
-        loaded_settings[ConfigKey.LAST_ADDED_URL] = url
-
-        try:
-            with open(CONFIG_PATH, "w", encoding="utf-8") as file:
-                json.dump(loaded_settings, file, indent=4, ensure_ascii=False)
-        except Exception as e:
-            logger.error(f"Error saving config: {e}")
-
+        # Config Manager မှတစ်ဆင့် last_added_url ကို စနစ်တကျ ပြင်ဆင်ပြီး Load လုပ်မည်
+        self.config_mgr.set(ConfigKey.LAST_ADDED_URL, url)
+        global loaded_settings
+        loaded_settings = self.config_mgr.get_all()
         self.loaded_settings = loaded_settings
 
         # yt-dlp path check
@@ -1263,8 +1576,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not os.path.exists(yt_dlp_path):
             self.statusbar.showMessage("yt-dlp executable not found.")
             logger.error("yt-dlp not found")
-            if hasattr(self, "movie") and self.movie:
-                self.movie.stop()
+
+            # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+            self.spinner.stop()
+
             self.lblThumbnail.setMovie(None)
             self.display_default_thumbnail()
             self.set_controls_status(UiState.FETCHING_ERROR)
@@ -1288,7 +1603,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def display_video_info(self):
         try:
             info = self.info
-            
 
             if not isinstance(info, dict):
                 raise ValueError("Video information is not valid.")
@@ -1299,13 +1613,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # try:
             #     # File name ကို Title သို့မဟုတ် Fixed Name အဖြစ် သတ်မှတ်နိုင်ပါတယ်
             #     file_name = "video_info.json"
-                
+
             #     with open(file_name, "w", encoding="utf-8") as f:
             #         # ensure_ascii=False က မြန်မာစာ သို့မဟုတ် အခြား Language စာလုံးများ မပျက်စီးအောင် ထိန်းပေးပါတယ်
             #         # indent=4 က JSON format ကို ဖတ်ရလွယ်အောင် လှပစွာ စီပေးပါတယ်
             #         json.dump(info, f, ensure_ascii=False, indent=4)
             # except Exception as save_err:
-            #     logger.warning(f"Failed to save info as JSON: {save_err}")
+                logger.warning(f"Failed to save info as JSON: {save_err}")
             # =========================================================
 
             # Title
@@ -1315,8 +1629,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if not isinstance(fullTitleStr, str):
                 fullTitleStr = str(fullTitleStr)
 
-            if len(fullTitleStr) >= 80:
-                self.lblTitle.setText(fullTitleStr[:80])
+            if len(fullTitleStr) >= 100:
+                self.lblTitle.setText(fullTitleStr[:100])
             else:
                 self.lblTitle.setText(fullTitleStr)
 
@@ -1407,6 +1721,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.thumbnail_failed = False
             thumbnail_url = info.get("thumbnail")
 
+            # Crop လုပ်ထားသည့် pixmap အတိုင်း ကွက်တိဝင်စေရန် scaledContents ကို False ထားပါမည်
+            self.lblThumbnail.setScaledContents(False)
+
             if thumbnail_url:
                 thumbnail_url = str(thumbnail_url)
                 current_request_id = getattr(
@@ -1419,8 +1736,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.thumbnail_success = False
                 self.thumbnail_failed = True
 
-                if hasattr(self, "movie") and self.movie:
-                    self.movie.stop()
+                # Spinner ကို ရပ်ပြီး ဖျောက်မည်
+                self.spinner.stop()
 
                 self.lblThumbnail.setMovie(None)
                 self.display_default_thumbnail()
@@ -1430,8 +1747,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # Taskbar Reset
             self.taskbar_service.reset()
-
-            # self.paste_link_action.setEnabled(True)
 
             loaded_settings = getattr(self, "loaded_settings", {})
 
@@ -1449,7 +1764,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if not self.download_controller.is_running():
                     self.on_download_clicked()
 
-
         except Exception as e:
             error_message = "Error displaying video information: " + str(e)
             logger.exception(error_message)
@@ -1458,8 +1772,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "Failed to display video information."
             )
 
-            if hasattr(self, "movie") and self.movie:
-                self.movie.stop()
+            # 1. Spinner ကို ရပ်ပြီး ဖျောက်မည်
+            self.spinner.stop()
 
             self.lblThumbnail.setMovie(None)
             self.display_default_thumbnail()
@@ -1468,7 +1782,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.set_controls_status(UiState.FETCHING_ERROR)
 
             self.taskbar_service.reset()
-            # self.paste_link_action.setEnabled(True)
 
     # =========================================================================
     # FORMAT SELECTION
@@ -1521,10 +1834,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.statusbar.showMessage("Format selection cancelled.")
 
     # =========================================================================
-    # DOWNLOAD
+    # ⬇️ DOWNLOAD
     # =========================================================================
     def on_download_clicked(self):
-        """Download — DownloadController ကို delegate"""
+        """ Download — DownloadController ကို delegate """
         self.stop_tips_rotation()
 
         # Stop download
@@ -1560,8 +1873,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             window.statusbar.showMessage(StatusMsg.READY)
 
         # Config
-        with open(CONFIG_PATH, "r", encoding="utf-8") as file:
-            loaded_settings = json.load(file)
+        loaded_settings = self.config_mgr.get_all()
 
         prevent_sleep_while_dloading = loaded_settings.get(
             ConfigKey.AWAKE_MODE, False
@@ -1577,6 +1889,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         embedded_subtitle = self.embSubtitlesButton.isChecked()
         embedded_metadata = self.embMetadataButton.isChecked()
         use_mtime = self.useMTimeButton.isChecked()
+        skip_sponsors_block = self.skipSponsorsButton.isChecked()
 
         # Awake mode
         if prevent_sleep_while_dloading:
@@ -1585,6 +1898,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         updated_data = {
             ConfigKey.USE_MTIME: use_mtime,
+            ConfigKey.SKIP_SPONSORS_BLOCK: skip_sponsors_block,
             ConfigKey.EMBED_THUMBNAIL: embedded_thumbnail,
             ConfigKey.EMBED_SUBTITLES: embedded_subtitle,
             ConfigKey.EMBED_CHAPTERS: embedded_chapters,
@@ -1601,6 +1915,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "embed_subtitles": embedded_subtitle,
             "embed_metadata": embedded_metadata,
             "use_mtime": use_mtime,
+            "skip_sponsors_block": skip_sponsors_block,
         }
 
         # UI state
@@ -1680,7 +1995,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # =========================================================================
     def set_controls_status(self, method: str):
         if method == UiState.DOWNLOADING:
-            self.show_option_controls_status(False)
+            self.set_option_controls_status(False)
             self.urlInput.setEnabled(True)
             self.pasteButton.setEnabled(True)
             self.historyButton.setEnabled(True)
@@ -1690,7 +2005,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.openFolderButton.setEnabled(True)
             self.downloadButton.setEnabled(True)
         elif method == UiState.FETCHING:
-            self.show_option_controls_status(False)
+            self.set_option_controls_status(False)
             self.urlInput.setEnabled(False)
             self.pasteButton.setEnabled(False)
             self.historyButton.setEnabled(False)
@@ -1700,7 +2015,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.openFolderButton.setEnabled(True)
             self.downloadButton.setEnabled(False)
         elif method == UiState.FETCHING_ERROR:
-            self.show_option_controls_status(False)
+            self.set_option_controls_status(False)
             self.urlInput.setEnabled(True)
             self.pasteButton.setEnabled(True)
             self.historyButton.setEnabled(True)
@@ -1710,7 +2025,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.openFolderButton.setEnabled(True)
             self.downloadButton.setEnabled(False)
         elif method == UiState.FETCHING_FINISHED:
-            self.show_option_controls_status(True)
+            self.set_option_controls_status(True)
             self.urlInput.setEnabled(True)
             self.pasteButton.setEnabled(True)
             self.historyButton.setEnabled(True)
@@ -1720,7 +2035,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.openFolderButton.setEnabled(True)
             self.downloadButton.setEnabled(True)
         else:
-            self.show_option_controls_status(True)
+            self.set_option_controls_status(True)
             self.urlInput.setEnabled(True)
             self.pasteButton.setEnabled(True)
             self.historyButton.setEnabled(True)
@@ -1735,19 +2050,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_open_folder_clicked(self):
         self.open_downloaded_folder()
 
-    def show_option_controls_status(self, status: bool):
-        if status:
-            self.embThumbnailButton.setVisible(True)
-            self.embSubtitlesButton.setVisible(True)
-            self.embChaptersButton.setVisible(True)
-            self.embMetadataButton.setVisible(True)
-            self.useMTimeButton.setVisible(True)
-        else:
-            self.embThumbnailButton.setVisible(False)
-            self.embSubtitlesButton.setVisible(False)
-            self.embChaptersButton.setVisible(False)
-            self.embMetadataButton.setVisible(False)
-            self.useMTimeButton.setVisible(False)
+    def set_option_controls_status(self, status: bool):
+        self.embThumbnailButton.setEnabled(status)
+        self.embSubtitlesButton.setEnabled(status)
+        self.embChaptersButton.setEnabled(status)
+        self.embMetadataButton.setEnabled(status)
+        self.useMTimeButton.setEnabled(status)
+        self.skipSponsorsButton.setEnabled(status)
 
     # =========================================================================
     # CLIPBOARD MONITOR
@@ -1789,7 +2098,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     f"Captured link from clipboard: {captured_url}"
                 )
                 logger.info(f"Clipboard captured: {captured_url}")
-                self.on_get_info_clicked()
+                self.on_fetch_info_clicked()
             else:
                 logger.warning(
                     "Fetching already running — clipboard URL ignored"
@@ -1798,20 +2107,59 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.clipboard_thread.last_clipboard_content = ""
 
     def on_toggle_clipboard_action(self):
-        # Tray Menu action ရဲ့ checked state (True/False) ကို ယူခြင်း
+        # Tray Menu action ရဲ့ checked state (True/False) ကို ယူ
         sender = self.sender()
         is_checked = sender.isChecked() if sender else False
 
-        # Config မှာ တန်ဖိုး Update လုပ်ပြီး သိမ်းဆည်းခြင်း
+        # Config မှာ တန်ဖိုး Update လုပ်ပြီး သိမ်းဆည်း
         self.config_mgr.set(ConfigKey.ADD_LINKS_CLIPBOARD, is_checked)
-        
-        # global loaded_settings ကိုလည်း Update လုပ်ခြင်း
+
+        # global loaded_settings ကိုလည်း Update လုပ်
         global loaded_settings
         loaded_settings[ConfigKey.ADD_LINKS_CLIPBOARD] = is_checked
 
-        # Clipboard Monitor thread ကို ချက်ချင်း Toggle (ON/OFF) လုပ်ပေးခြင်း
+        # Clipboard Monitor thread ကို ချက်ချင်း Toggle (ON/OFF) လုပ်
         self.check_and_toggle_clipboard_monitor()
         logger.info(f"Auto add clipboard toggled: {is_checked}")
+
+    def check_for_updates(self, silent=False):
+        """ Update စစ်ဆေးသည့် Method (silent=True ဆိုပါက Update မရှိလျှင် Alert မပြပါ) """
+        self.is_silent_update_check = silent
+
+        # GitHub Releases API Endpoint
+        UPDATE_URL = "https://api.github.com/repos/YawStar/U-Tube-Downloader/releases/latest"
+
+        if not silent:
+            self.statusbar.showMessage("Checking for updates...")
+
+        self.update_thread = UpdateCheckerThread(
+            current_version=CONST.APP_VERSION,
+            update_url=UPDATE_URL
+        )
+        self.update_thread.update_checked.connect(self._on_update_checked)
+        self.update_thread.check_failed.connect(self._on_update_failed)
+        self.update_thread.start()
+
+    def _on_update_checked(self, is_available: bool, latest_version: str, release_notes: str, download_url: str):
+        if is_available:
+            # Standard Message Box အစား Custom Modern Dialog ပြ
+            dialog = ModernUpdateDialog(
+                current_ver=CONST.APP_VERSION,
+                latest_ver=latest_version,
+                release_notes=release_notes,
+                download_url="https://github.com/YawStar/U-Tube-Downloader/releases",
+                parent=self
+            )
+            dialog.exec()
+
+        if hasattr(self, 'statusbar'):
+            self.statusbar.showMessage("Ready")
+
+    def _on_update_failed(self, error_msg: str):
+        if not self.is_silent_update_check:
+            QMessageBox.warning(self, "Update Check Failed", f"Could not check for updates:\n{error_msg}")
+        if hasattr(self, 'statusbar'):
+            self.statusbar.showMessage("Ready")
 
 
 class HistoryItemWidget(QWidget):
@@ -1832,7 +2180,7 @@ class HistoryItemWidget(QWidget):
 
         self.lbl_title = QLabel(title)
         self.lbl_title.setStyleSheet("font-size: 10pt; font-weight: bold; color: #ffffff;")
-        
+
         status_str = f" <span style='color: #00A2FF;'>[{status}]</span>" if status else ""
         self.lbl_url = QLabel(f"{url}{status_str}")
         self.lbl_url.setTextFormat(Qt.TextFormat.RichText)
@@ -1849,7 +2197,7 @@ class HistoryItemWidget(QWidget):
         self.btn_delete.setFixedSize(24, 24)
         self.btn_delete.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btn_delete.setToolTip("Delete item")
-        
+
         # Style ပြင်ဆင်ခြင်း
         self.btn_delete.setStyleSheet("""
             QToolButton {
@@ -1865,7 +2213,7 @@ class HistoryItemWidget(QWidget):
                 border-radius: 12px;
             }
         """)
-        
+
         self.btn_delete.hide()
         self.btn_delete.clicked.connect(self.on_delete_clicked)
 
@@ -1905,37 +2253,37 @@ class HistoryDialog(QDialog):
 
     def load_history(self, records):
         self.ui.listHistory.clear()
-        
+
         for record in records:
             url = record[0] if len(record) > 0 else ""
             title = record[1] if len(record) > 1 and record[1] else "No Title"
             status = record[2] if len(record) > 2 and record[2] else ""
-            
+
             item = QListWidgetItem()
             item.setSizeHint(QSize(0, 50))
-            
-            # UserRole ထဲတွင် Search အတွက် Data သိမ်းဆည်းခြင်း
+
+            # UserRole ထဲတွင် Search အတွက် Data သိမ်းဆည်း
             item.setData(Qt.ItemDataRole.UserRole, url)
             item.setData(Qt.ItemDataRole.UserRole + 1, f"{title} {url}")
-            
-            # Custom Item Widget ထည့်သွင်းခြင်း
+
+            # Custom Item Widget ထည့်သွင်း
             item_widget = HistoryItemWidget(
-                title=title, 
-                url=url, 
-                status=status, 
+                title=title,
+                url=url,
+                status=status,
                 on_delete_callback=self.delete_single_item
             )
-            
+
             self.ui.listHistory.addItem(item)
             self.ui.listHistory.setItemWidget(item, item_widget)
 
     def delete_single_item(self, url):
-        """တစ်ခုချင်းစီ ဖျက်သည့် Function"""
-        # 1. Database မှ ဖျက်ခြင်း (db_mgr ရှိပါက)
+        """ တစ်ခုချင်းစီ ဖျက်သည့် Function """
+        # Database မှ ဖျက် (db_mgr ရှိရင်)
         if self.db_mgr and hasattr(self.db_mgr, 'delete_history_by_url'):
             self.db_mgr.delete_history_by_url(url)
 
-        # 2. UI ListWidget မှ ဖျက်ခြင်း
+        # UI ListWidget မှ ဖျက်
         for i in range(self.ui.listHistory.count()):
             item = self.ui.listHistory.item(i)
             if item and item.data(Qt.ItemDataRole.UserRole) == url:
@@ -1943,7 +2291,7 @@ class HistoryDialog(QDialog):
                 break
 
     def clear_all_history(self):
-        """History အားလုံးကို ဖျက်ခြင်း"""
+        """ History အားလုံးကို ဖျက်ခြင်း """
         if self.ui.listHistory.count() == 0:
             return
 
@@ -1972,11 +2320,12 @@ class HistoryDialog(QDialog):
     def get_selected_url(self):
         return self.selected_url
 
+
 # ============================================================================
 # Global Exception Hook — ✨ Phase 5A
 # ============================================================================
 def global_exception_hook(exc_type, exc_value, exc_traceback):
-    """Uncaught exceptions ကို log လုပ်ပြီး crash မဖြစ်စေရန်"""
+    """ Uncaught exceptions ကို log လုပ်ပြီး crash မဖြစ်စေရန် """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
@@ -1997,7 +2346,6 @@ if __name__ == "__main__":
         logger.info("Secondary instance detected — exiting")
         sys.exit(0)
 
-    
     # Font load
     FONT_RESOURCES = [
         ":/fonts/fonts/pyidaungsu.ttf",
@@ -2011,8 +2359,7 @@ if __name__ == "__main__":
         ":/fonts/fonts/pyidaungsu.ttf", fallback="sans-serif"
     )
     app.setFont(QFont(myanmar_family, 10))
-    # main.py — Font load ပြီးတာနဲ့
-    
+
     FontService.load_resource_fonts(FONT_RESOURCES)
 
     window = MainWindow()
@@ -2026,6 +2373,17 @@ if __name__ == "__main__":
         window.raise_()
 
     app.activationRequested.connect(restore_and_raise)
+
+    # App ပိတ်ချိန် နောက်ဆုံး ကာကွယ်မှု — QThread warning ကာကွယ်
+    def _on_about_to_quit():
+        logger.info("aboutToQuit — final thread cleanup")
+        try:
+            window._cleanup_all_threads()
+            # pass
+        except Exception as e:
+            logger.error(f"Cleanup in aboutToQuit failed: {e}")
+
+    app.aboutToQuit.connect(_on_about_to_quit)
 
     # Dependencies check at startup
     dpc_check = window.check_necessary_files()

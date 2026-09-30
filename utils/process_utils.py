@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Process ဆိုင်ရာ helper များ။
+Process ဆိုင်ရာ helper များ
 
 QProcess + psutil ပေါင်းစပ်ပြီး process tree (parent + children) ကို
 OS မရွေး kill လုပ်ပေးသည်။ yt-dlp/ffmpeg ကဲ့သို့ child process များ
-ကျန်ခဲ့ခြင်းမှ ကာကွယ်ရန် အသုံးပြုသည်။
+ကျန်ခဲ့ခြင်းမှ ကာကွယ်ရန် အသုံးပြုထား
 """
 import psutil
 from PySide6.QtCore import QProcess
@@ -12,10 +12,10 @@ from PySide6.QtCore import QProcess
 
 def kill_process_tree(process_obj: QProcess) -> None:
     """
-    QProcess ရဲ့ parent ရော child (yt-dlp/ffmpeg) အားလုံးကို kill လုပ်သည်။
+    QProcess ရဲ့ parent ရော child (yt-dlp/ffmpeg) အားလုံးကို kill လုပ်
 
     main.py ရဲ့ MainWindow.kill_process_tree() method ရဲ့ logic အတိုင်း
-    အတိအကျ ကူးထားသည်။ Behavior မပြောင်းပါ။
+    အတိအကျ ကူးထားသည်။ Behavior မပြောင်းလဲ
 
     Args:
         process_obj: ရပ်တန့်လိုသော QProcess instance
@@ -33,7 +33,7 @@ def kill_process_tree(process_obj: QProcess) -> None:
     try:
         parent = psutil.Process(pid)
 
-        # 🎯 Child processes (yt-dlp/ffmpeg) ကို အရင် kill
+        # Child processes (yt-dlp/ffmpeg) ကို အရင် kill
         for child in parent.children(recursive=True):
             try:
                 child.kill()
@@ -41,7 +41,7 @@ def kill_process_tree(process_obj: QProcess) -> None:
                 # ဒီ child က ပြီးသွားပြီ
                 pass
             except psutil.AccessDenied:
-                # Permission မရ — ကျော်လိုက်
+                # Permission မရ — ကျော်မယ်
                 pass
 
         # Parent ကို kill

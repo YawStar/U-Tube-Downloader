@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 29),
-    prodvers=(1, 0, 0, 29),
+    filevers=(1, 0, 0, 30),
+    prodvers=(1, 0, 0, 30),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -17,13 +17,13 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'YawHackka'),
             StringStruct(u'FileDescription', u'YawStar U-Tube Downloader'),
-            StringStruct(u'FileVersion', u'1.0.0.29'),
+            StringStruct(u'FileVersion', u'1.0.0.30'),
             StringStruct(u'InternalName', u'YawStar U-Tube Downloader'),
             StringStruct(u'LegalCopyright', u'YawHackka (YawStar © 2009)'),
             StringStruct(u'LegalTrademarks', u'YawStar © 2009'),
             StringStruct(u'OriginalFilename', u'YawStar U-Tube Downloader.exe'),
             StringStruct(u'ProductName', u'YawStar U-Tube Downloader'),
-            StringStruct(u'ProductVersion', u'1.0.0.29')
+            StringStruct(u'ProductVersion', u'1.0.0.30')
           ]
         )
       ]

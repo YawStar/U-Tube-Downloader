@@ -14,10 +14,10 @@ class ActionCard(QFrame):
     def __init__(self, icon_path, title, subtitle, url="", on_click=None, tooltip_text="", parent=None):
         super().__init__(parent)
         self.url = url  # Link URL သိမ်းဆည်းရန်
-        self.on_click = on_click  # 👈 Custom Callback Function သိမ်းရန်
+        self.on_click = on_click  # Custom Callback Function သိမ်းရန်
         self.setCursor(QCursor(Qt.PointingHandCursor))
         
-        # Hover လုပ်လျှင် စာသားပေါ်လာစေရန် Tooltip သတ်မှတ်ခြင်း
+        # Hover လုပ်လျှင် စာသားပေါ်လာစေရန် Tooltip သတ်မှတ်
         if tooltip_text:
             self.setToolTip(tooltip_text)
             
@@ -66,7 +66,7 @@ class ActionCard(QFrame):
         layout.addStretch()
 
     def mousePressEvent(self, event):
-        """Card ကို နှိပ်လိုက်ပါက Callback သို့မဟုတ် URL သို့ ပို့ပေးခြင်း"""
+        """ Card ကို နှိပ်လိုက်ပါက Callback သို့မဟုတ် URL သို့ ပို့ပေးခြင်း """
         if event.button() == Qt.LeftButton:
             if self.on_click:
                 self.on_click()  # custom function/method ထားရှိပါက ခေါ်ပေး
@@ -212,9 +212,9 @@ class AboutDialog(QDialog):
 
         bottom_icon_data = [
             (":/images/images/globe.svg", CONST.YS_BLOG_URL, "Official Website"),
-            (":/images/images/mail.svg", "mailto:yawstar.2009@gmail.com", "Contact via Email"),
+            (":/images/images/mail.svg", f"mailto:{CONST.MAIL}", "Contact via Email"),
+            (":/images/images/facebook.svg", CONST.FACEBOOK_URL, "Programmer Facebook"),
             (":/images/images/github.svg", CONST.GITHUB_PROFILE_URL, "GitHub Profile"),
-            (":/images/images/groups.svg", CONST.TELEGRAM_URL, "Telegram Community"),
             (":/images/images/bug_report.svg", CONST.GITHUB_REPO_URL, "Bugs Report!"),
         ]
 
@@ -249,14 +249,14 @@ class AboutDialog(QDialog):
 
     # ==================== Methods ====================
     def show_about_qt(self):
-        """Qt Framework အကြောင်း MessageBox ပေါ်စေမည့် Method"""
+        """ Qt Framework အကြောင်း MessageBox ပေါ်စေမည့် Method """
         QMessageBox.aboutQt(self, "About Qt")
 
     def open_donate_link(self):
-        """Donate ခလုတ်နှိပ်ပါက ပွင့်မည့် Link"""
+        """ Donate ခလုတ်နှိပ်ပါက ပွင့်မည့် Link """
         QDesktopServices.openUrl(QUrl(CONST.DONATE_URL))
 
     def open_link(self, url: str):
-        """အထွေထွေ URL များ ပွင့်စေရန် Method"""
+        """ အထွေထွေ URL များ ပွင့်စေရန် Method """
         if url:
             QDesktopServices.openUrl(QUrl(url))

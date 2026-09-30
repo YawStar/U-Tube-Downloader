@@ -2,16 +2,15 @@
 """
 Download Controller
 
-yt-dlp download ကို QProcess ဖြင့် run ပြီး progress ကို
-parse လုပ်သည်။
+yt-dlp download ကို QProcess ဖြင့် run ပြီး progress ကို parse လုပ်
 
-main.py ထဲက ဒီ logic တွေကို စုစည်းထားသည်:
+main.py ထဲက ဒီ logic များ :
     • on_download_clicked() — process start + args
     • read_download_output() — progress parse + destination detect
     • read_download_error() — error handling
     • on_download_finished() — completed/failed
 
-View ကို signals ဖြင့် notify လုပ်သည်:
+View ကို signals ဖြင့် notify လုပ်:
 
     download_started                    — UI state ပြောင်းရန်
     download_log(str)                   — log အတွက်
@@ -20,17 +19,48 @@ View ကို signals ဖြင့် notify လုပ်သည်:
     download_indeterminate()            — marquee mode
     download_completed(str)             — final path
     download_failed(str)                — error message
-    download_cancelled                  — user ဖျက်လိုက်
+    download_cancelled                  — user ကဖျက်သိမ်း
 """
 import re
-from PySide6.QtCore import QObject, QProcess, Signal
+import os
+from PySide6.QtCore import QObject, QProcess, QStandardPaths, Signal
 
 from core.services.yt_dlp_service import YtDlpService
 from utils.process_utils import kill_process_tree
 
+# CONSTANTS
+import core.global_constants as CONST
+
+# ============================================================================
+# AppData Paths
+# ============================================================================
+APP_DATA_DIR = os.path.normpath(
+    QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+)
+if not os.path.exists(APP_DATA_DIR):
+    os.makedirs(APP_DATA_DIR)
+
+APP_CACHE_DIR = os.path.join(APP_DATA_DIR, "Cache")
+if not os.path.exists(APP_CACHE_DIR):
+    os.makedirs(APP_CACHE_DIR)
+
+TPT_DIR = os.path.join(APP_DATA_DIR, "Tools")
+if not os.path.exists(TPT_DIR):
+    os.makedirs(TPT_DIR)
+
+CONFIG_PATH = os.path.normpath(os.path.join(APP_DATA_DIR, "config.json"))
+DB_PATH = os.path.normpath(os.path.join(APP_DATA_DIR, "history.db"))
+
+# ============================================================================
+# ✨ Phase 5A — Logging setup
+# ============================================================================
+from utils.logger import setup_logging, get_logger
+LOG_FILE = os.path.normpath(os.path.join(APP_DATA_DIR, "app.log"))
+setup_logging(log_file=LOG_FILE, level=10)  # DEBUG level
+logger = get_logger(__name__)
 
 class DownloadController(QObject):
-    """yt-dlp download process ကို စီမံသည်။"""
+    """ yt-dlp download process ကို စီမံ """
 
     # ------------------------------------------------------------------
     # Signals
@@ -76,14 +106,14 @@ class DownloadController(QObject):
         is_windows: bool = False,
     ) -> None:
         """
-        Download စတင်သည်။
+        Download စတင်
 
         Args:
             url: video URL
             settings: config settings dict
-            selected_format_id: FormatDialog မှ ရွေးထားသော ID
+            selected_format_id: FormatDialog မှာရွေးထားတဲ့ ID
             gui_overrides: GUI checkbox တန်ဖိုးများ
-            is_windows: --windows-filenames ထည့်ရန်
+            is_windows: --windows-filenames ထည့်
         """
         if self.is_running():
             return
@@ -108,15 +138,17 @@ class DownloadController(QObject):
         self.process.start(yt_dlp_path, args)
 
     def cancel(self) -> None:
-        """User က Stop Download နှိပ်လိုက်"""
+        """ User က Stop Download နှိပ်လိုက်ရင် """
+        logger.info("User interrupted.")
         if not self.is_running():
             return
 
         self._cancelled = True
         kill_process_tree(self.process)
-        # _on_finished မှ download_cancelled emit လုပ်မည်
+        # _on_finished မှ download_cancelled emit လုပ်
 
     def get_error_output(self) -> str:
+        logger.error(self._stderr_buffer)
         return self._stderr_buffer
 
     # ------------------------------------------------------------------
@@ -135,6 +167,7 @@ class DownloadController(QObject):
 
         if "[download]" not in data:
             self.download_log.emit(data)
+            logger.info(data)
 
         for line in data.splitlines():
             # Destination path
@@ -144,6 +177,7 @@ class DownloadController(QObject):
                 ).strip()
                 self.download_log.emit(data)
                 self.download_destination_changed.emit(self.final_path)
+                logger.info(line)
                 continue
 
             # Merger path
@@ -154,23 +188,53 @@ class DownloadController(QObject):
                     .strip()
                 )
                 self.download_destination_changed.emit(self.final_path)
-                # ⭐ Postprocess → marquee
+                logger.info(line)
+                self.download_progress.emit(100, "Merging Video and Audio...")
+                # Postprocess → marquee
                 self._is_marquee = True
                 self.download_indeterminate.emit()
                 continue
 
-            # Postprocess markers
-            if (
-                "[ExtractAudio]" in line
-                or "[EmbedFilename]" in line
-            ):
-                # ⭐ Postprocess → marquee
+            # Embedding Subtitle
+            if ("[EmbedSubtitle]" in line):
+                # Postprocess → marquee
                 self._is_marquee = True
                 self.download_indeterminate.emit()
+                self.download_progress.emit(100, "Embedding Subtitle...")
+                logger.info(line)
+                continue
+
+            # Embedding Metadata
+            if ("[Metadata]" in line):
+                # Postprocess → marquee
+                self._is_marquee = True
+                self.download_indeterminate.emit()
+                self.download_progress.emit(100, "Embedding Metadata...")
+                logger.info(line)
+                continue
+
+            # Embedding Thumbnail
+            if ("[EmbedThumbnail]" in line):
+                # Postprocess → marquee
+                self._is_marquee = True
+                self.download_indeterminate.emit()
+                self.download_progress.emit(100, "Embedding Thumbnail...")
+                logger.info(line)
+                continue
+
+            # Postprocess markers
+            if ("[ExtractAudio]" in line or 
+                "[EmbedFilename]" in line):
+                # Postprocess → marquee
+                self._is_marquee = True
+                self.download_indeterminate.emit()
+                self.download_progress.emit(100, "Postprocressing..")
+                logger.info(line)
                 continue
 
             # Progress line
             if "[download]" in line and "|" in line:
+                logger.info(line)
                 data_part = line.replace("[download]", "").strip()
                 parts = data_part.split("|")
 

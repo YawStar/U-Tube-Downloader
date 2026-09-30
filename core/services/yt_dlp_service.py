@@ -2,15 +2,14 @@
 """
 yt-dlp Command Builder Service
 
-main.py ထဲက:
+main.py ထဲက logic:
     • on_get_info_clicked()  →  args = [...] (fetch info)
     • on_download_clicked()  →  args = [...] (download)
 
-နှစ်ခုလုံးမှာ ထပ်ခါတလဲလဲ ရေးနေရတဲ့ yt-dlp args ဆောက်တဲ့ logic ကို
-ဒီ file ထဲ စုစည်းထားသည်။
+yt-dlp args ဆောက်တဲ့ logic ကို file ထဲ စုထား
 
-⚠️ ဒီ class က PySide6/Qt ကို လုံးဝ မမှီခိုပါ။
-    Pure Python — Unit Test လုပ်ရလွယ်သည်။
+⚠️ ဒီ class က PySide6/Qt ကို လုံးဝ မမှီခိုအောင်လုပ်ထားတယ်
+    Pure Python — Unit Test လုပ်ရလွယ်တယ်
 """
 import os
 from typing import Any
@@ -18,7 +17,7 @@ from typing import Any
 
 class YtDlpService:
     """
-    yt-dlp executable အတွက် command-line arguments များ ဆောက်ပေးသည်။
+    yt-dlp executable အတွက် command-line arguments တွေ တည်ဆောက်ပေး
 
     Attributes:
         tools_dir: yt-dlp / ffmpeg / deno တည်ရှိရာ folder (TPT_DIR)
@@ -72,14 +71,14 @@ class YtDlpService:
     # ------------------------------------------------------------------
     def check_necessary_files(self) -> tuple[int, list[str]]:
         """
-        လိုအပ်သော binary ဖိုင်များ ရှိ/မရှိ စစ်ဆေးသည်။
+        လိုအပ်သော binary ဖိုင်များ ရှိ/မရှိ စစ်ဆေး
 
         main.py ရဲ့ MainWindow.check_necessary_files() ရဲ့
-        logic ကို ကွက်တိ ကူးထားသည်။
+        logic ကို ကွက်တိ ကူးထား
 
         Returns:
             (missing_count, missing_names)
-            missing_count == 0 → အားလုံး ရှိပြီ
+            missing_count == 0 → အားလုံးရှိ
         """
         checks = {
             "yt-dlp": self.yt_dlp_path,
@@ -94,10 +93,10 @@ class YtDlpService:
     # ------------------------------------------------------------------
     def build_info_args(self, url: str, settings: dict[str, Any]) -> list[str]:
         """
-        yt-dlp --dump-json အတွက် args ဆောက်သည်။
+        yt-dlp --dump-json အတွက် args ဆောက်
 
         main.py → on_get_info_clicked() ထဲက args = [...] ကို
-        ကွက်တိ အစားထိုးသည်။
+        ကွက်တိ အစားထိုး
 
         Args:
             url: ရှာဖွေမည့် URL
@@ -106,8 +105,8 @@ class YtDlpService:
         Returns:
             yt-dlp command-line args list
         """
+
         args: list[str] = [
-            "--quiet",
             "--no-warnings",
             "--no-playlist",
             "--ignore-config",
@@ -117,11 +116,21 @@ class YtDlpService:
             "--dump-json",
         ]
 
-        # Cookies (main.py ရဲ့ if/elif block ကို service method ဖြင့် အစားထိုး)
+        # ---- Cookies ----
         args += self._build_cookies_args(settings)
 
         # Proxy
         args += self._build_proxy_args(settings)
+
+        # Ipv selection
+        ipver       = settings.get("ip_version", "Default")
+        if ipver != "Defult":
+            if ipver == "IPv4":
+                args.append('--force-ipv4')
+            elif ipver == "IPv6":
+                args.append('--force-ipv6')
+            else:
+                pass
 
         # URL — နောက်ဆုံးမှာ ထည့်
         args.append(url)
@@ -139,21 +148,21 @@ class YtDlpService:
         is_windows: bool = False,
     ) -> list[str]:
         """
-        yt-dlp download အတွက် args ဆောက်သည်။
+        yt-dlp download အတွက် args ဆောက်
 
         main.py → on_download_clicked() ထဲက args = [...] ကို
-        ကွက်တိ အစားထိုးသည်။
+        ကွက်တိ အစားထိုး
 
         Args:
             url: ဒေါင်းလုဒ်လုပ်မည့် URL
             settings: config.json မှ ဖတ်ထားသော settings
             selected_format_id: FormatDialog မှ ရွေးထားသော ID
                                 (ဥပမာ "137+140" သို့မဟုတ် "22")
-                                None ဖြစ်ပါက format-sort သုံးမည်
+                                None ဖြစ်ပါက format-sort သုံးမယ်
             gui_overrides: Checkbox များမှ override လုပ်လိုသော တန်ဖိုးများ
                            key: "embed_thumbnail", "embed_chapters",
                                 "embed_subtitles", "embed_metadata", "use_mtime"
-            is_windows: True ဖြစ်ပါက --windows-filenames ထည့်မည်
+            is_windows: True ဖြစ်ပါက --windows-filenames ထည့်မယ်
 
         Returns:
             yt-dlp command-line args list
@@ -161,7 +170,7 @@ class YtDlpService:
         gui_overrides = gui_overrides or {}
 
         def get(key: str, default=None):
-            """GUI override ကို settings ထက် ဦးစားပေး"""
+            """ GUI override ကို settings ထက် ဦးစားပေး """
             if key in gui_overrides:
                 return gui_overrides[key]
             return settings.get(key, default)
@@ -183,7 +192,9 @@ class YtDlpService:
         embed_chapters      = get("embed_chapters", False)
         embed_metadata      = get("embed_metadata", False)
         use_mtime           = get("use_mtime", True)
+        skip_sponsors_block = get("skip_sponsors_block", True)
         force_overwrite     = get("force_overwrite", False)
+        output_template     = get("output_template", "%(title).200s.%(ext)s")
 
         # ---- Base args ----
         args: list[str] = [
@@ -223,6 +234,16 @@ class YtDlpService:
         # ---- Proxy ----
         args += self._build_proxy_args(settings)
 
+        # ---- Ipv selection ----
+        ipver       = settings.get("ip_version", "Default")
+        if ipver != "Defult":
+            if ipver == "IPv4":
+                args.append('--force-ipv4')
+            elif ipver == "IPv6":
+                args.append('--force-ipv6')
+            else:
+                pass
+
         # ---- Encoding ----
         args += ["--encoding", "UTF-8"]
 
@@ -258,8 +279,14 @@ class YtDlpService:
         # ---- mtime ----
         args.append("--mtime" if use_mtime else "--no-mtime")
 
+        # ---- skip sponsors block ----
+        if skip_sponsors_block:
+            # args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
+            args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
+
         # ---- Output template (main.py နဲ့ တူ) ----
-        args += ["--output", "%(title).200s.%(ext)s"]
+        # args += ["--output", "%(title).200s.%(ext)s"]
+        args += ["--output", output_template]
 
         # ---- URL ---- (အမြဲ နောက်ဆုံး)
         args.append(url)
@@ -270,10 +297,10 @@ class YtDlpService:
     # ------------------------------------------------------------------
     def _build_cookies_args(self, settings: dict[str, Any]) -> list[str]:
         """
-        Cookies type အလိုက် yt-dlp args ပြန်ပေးသည်။
+        Cookies type အလိုက် yt-dlp args ပြန်ပေး
 
         main.py ရဲ့ on_get_info_clicked() နဲ့ on_download_clicked()
-        နှစ်ခုလုံးထဲက cookies if/elif block ကို စုစည်းထားသည်။
+        နှစ်ခုလုံးထဲက cookies if/elif block ကို စုစည်းထား
 
         Type များ:
             "file"    → --cookies <path> (ဖိုင်ရှိမှ ထည့်)
@@ -321,7 +348,7 @@ class YtDlpService:
     # Private: Proxy
     # ------------------------------------------------------------------
     def _build_proxy_args(self, settings: dict[str, Any]) -> list[str]:
-        """Proxy settings ရှိပါက --proxy arg ပြန်ပေးသည်။"""
+        """ Proxy settings ရှိပါက --proxy arg ပြန်ပေးသည်။ """
         if not settings.get("use_proxy", False):
             return []
         host = settings.get("proxy_host", "127.0.0.1")

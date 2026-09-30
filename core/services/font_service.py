@@ -2,10 +2,10 @@
 """
 Font Service
 
-Qt resource ထဲက custom fonts (.ttf) ကို App runtime မှာ load လုပ်ပေးသည်။
+Qt resource ထဲက custom fonts (.ttf) ကို App runtime မှာ load လုပ်ပေး
 
 System install မလိုဘဲ font ကို သုံးနိုင်စေရန် QFontDatabase.addApplicationFont()
-ကို အသုံးပြုသည်။
+ကို အသုံးပြု
 
 Features:
     • Resource path မှ font load
@@ -21,10 +21,13 @@ Usage:
     # loaded = {"Pyidaungsu": "Pyidaungsu"}
 """
 from PySide6.QtGui import QFontDatabase
+from utils.logger import setup_logging, get_logger
 
+# Module logger
+logger = get_logger(__name__)
 
 class FontService:
-    """Custom fonts ကို App ထဲ load လုပ်သည်။"""
+    """ Custom fonts ကို App ထဲ load လုပ် """
 
     # Load ပြီးသား fonts cache
     _loaded_fonts: dict = {}
@@ -32,7 +35,7 @@ class FontService:
     @classmethod
     def load_font(cls, font_path: str) -> list[str]:
         """
-        Font file တစ်ခုကို load လုပ်သည်။
+        Font file တစ်ခုကို load လုပ်
 
         Args:
             font_path: resource path (":/fonts/x.ttf") သို့မဟုတ် file path
@@ -47,20 +50,20 @@ class FontService:
 
         if font_id == -1:
             # Load fail
-            print(f"Font load failed: {font_path}")
+            logger.info(f"Font load failed: {font_path}")
             cls._loaded_fonts[font_path] = []
             return []
 
         families = QFontDatabase.applicationFontFamilies(font_id)
         cls._loaded_fonts[font_path] = families
 
-        print(f"Font loaded: {font_path} → {families}")
+        logger.info(f"Font loaded: {font_path} → {families}")
         return families
 
     @classmethod
     def load_resource_fonts(cls, font_paths: list[str]) -> dict:
         """
-        Resource fonts အများကြီးကို load လုပ်သည်။
+        Resource fonts လေးငါးခုကို load လုပ်
 
         Args:
             font_paths: resource paths list
@@ -76,7 +79,7 @@ class FontService:
     @classmethod
     def get_family(cls, font_path: str, fallback: str = "") -> str:
         """
-        Font family name ကို ရယူသည်။
+        Font family name ကို ရယူ
 
         Args:
             font_path: resource path
@@ -90,5 +93,5 @@ class FontService:
 
     @classmethod
     def is_loaded(cls, font_path: str) -> bool:
-        """Font load ဖြစ်ပြီးလား စစ်"""
+        """ Font load ဖြစ်ပြီးလား စစ်ဆေး """
         return font_path in cls._loaded_fonts and bool(cls._loaded_fonts[font_path])

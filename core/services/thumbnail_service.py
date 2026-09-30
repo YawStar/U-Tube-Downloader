@@ -3,17 +3,17 @@
 Thumbnail Service
 
 QNetworkAccessManager ကို အသုံးပြုပြီး Video Thumbnail ကို
-Async download လုပ်ပေးသည်။
+Async download လုပ်ပေး
 
-main.py ထဲက ဒီ logic တွေကို စုစည်းထားသည်:
+main.py ထဲက logic များ:
 
     • display_video_info() ထဲက QNetworkRequest + reply.setProperty
     • on_thumbnail_downloaded() — reply handling
     • on_thumbnail_timeout() — 10s timeout
     • save_thumbnail() — Save As dialog + HD download
 
-Request ID စနစ်ကို ထိန်းသိမ်းထားသည် — အရင် fetch ၏ thumbnail
-နောက်ကျရောက်လာလျှင် လက်ရှိ fetch ကို မထိခိုက်စေရန်။
+Request ID စနစ်ကို ထိန်းသိမ်းထား — အရင် fetch ၏ thumbnail
+နောက်ကျရောက်လာလျှင် လက်ရှိ fetch ကို မထိခိုက်စေရန်
 """
 import os
 import re
@@ -31,13 +31,13 @@ from PySide6.QtWidgets import QFileDialog
 class ThumbnailService(QObject):
     """
     Video Thumbnail ကို background မှ download လုပ်ပြီး
-    View ကို signals ဖြင့် notify လုပ်သည်။
+    View ကို signals ဖြင့် notify လုပ်
     """
 
     # ------------------------------------------------------------------
     # Signals
     # ------------------------------------------------------------------
-    thumbnail_ready = Signal(QPixmap)          # download အောင်မြင်ပြီ
+    thumbnail_ready = Signal(QPixmap)          # download အောင်မြင်
     thumbnail_failed = Signal(str)             # reason
     thumbnail_cancelled = Signal()             # request ID mismatch/timeout
 
@@ -56,20 +56,21 @@ class ThumbnailService(QObject):
         """
         super().__init__(parent)
         self.network_manager = network_manager
-        # network_manager.finished signal ကို service က ဖမ်းမည်
+        # network_manager.finished signal ကို service က ဖမ်းမယ်
         self.network_manager.finished.connect(self._on_reply_finished)
 
         # State
         self.current_request_id = 0
         self.current_reply: QNetworkReply | None = None
         self.timeout_timer: QTimer | None = None
+        self._fallback_urls: list[str] = []
 
     # ------------------------------------------------------------------
     # Request lifecycle
     # ------------------------------------------------------------------
     def request(self, url: str, request_id: int | None = None) -> int:
         """
-        Thumbnail download စတင်သည်။
+        Thumbnail download စတင်
 
         Args:
             url: Thumbnail URL
@@ -91,8 +92,45 @@ class ThumbnailService(QObject):
             self.thumbnail_failed.emit("Empty thumbnail URL")
             return request_id
 
+        # Build Fallback URLs list if it's a YouTube URL
+        self._fallback_urls = self._build_fallback_urls(url)
+
+        self._start_next_download(request_id)
+        return request_id
+
+    def _build_fallback_urls(self, primary_url: str) -> list[str]:
+        """ primary_url 404 ဖြစ်ပါက အစားထိုးသုံးရန် fallback list ပြုလုပ် """
+        urls = [primary_url]
+        
+        # YouTube Video ID ကို extraction လုပ်ခြင်း
+        vid_match = re.search(r"/(?:vi_webp|vi)/([a-zA-Z0-9_-]{11})/", primary_url)
+        if not vid_match:
+            vid_match = re.search(r"vi=([a-zA-Z0-9_-]{11})", primary_url)
+
+        if vid_match:
+            vid = vid_match.group(1)
+            candidates = [
+                f"https://i.ytimg.com/vi/{vid}/maxresdefault.jpg",
+                f"https://i.ytimg.com/vi/{vid}/sddefault.jpg",
+                f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
+                f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg",
+            ]
+            for c in candidates:
+                if c not in urls:
+                    urls.append(c)
+
+        return urls
+
+    def _start_next_download(self, request_id: int) -> None:
+        """ List ထဲမှ နောက် URL တစ်ခုကို စတင် ဒေါင်းလုဒ်လုပ် """
+        if not self._fallback_urls:
+            self.thumbnail_failed.emit("All thumbnail fallback URLs failed (404/Error)")
+            return
+
+        current_url = self._fallback_urls.pop(0)
+
         try:
-            req = QNetworkRequest(QUrl(str(url)))
+            req = QNetworkRequest(QUrl(str(current_url)))
             req.setRawHeader(b"User-Agent", b"Mozilla/5.0")
 
             reply = self.network_manager.get(req)
@@ -111,10 +149,10 @@ class ThumbnailService(QObject):
         except Exception as e:
             self.thumbnail_failed.emit(f"Request error: {e}")
 
-        return request_id
-
     def cancel(self) -> None:
-        """လက်ရှိ download ကို ရပ်"""
+        """ လက်ရှိ download ကိုရပ် """
+        self._fallback_urls.clear()
+
         if self.timeout_timer is not None:
             try:
                 if self.timeout_timer.isActive():
@@ -129,23 +167,24 @@ class ThumbnailService(QObject):
                     self.current_reply.abort()
             except Exception:
                 pass
-            # Reply ကို deleteLater ကို _on_reply_finished မှ လုပ်မည်
+            # Reply ကို deleteLater ကို _on_reply_finished မှ လုပ်မယ်
 
     def reset_state(self) -> None:
         """
-        Fetch အသစ် မစခင်မှာ state ကို ရှင်းသည်။
-        (request() က ဒါကို auto လုပ်ပေးသည် — manual လိုအပ်ရင်သာ ခေါ်)
+        Fetch အသစ် မစခင်မှာ state ကို ရှင်း
+        (request() က ဒါကို auto လုပ်ပေး — manual လိုအပ်ရင် ခေါ်သုံး)
         """
         self.current_reply = None
         self.timeout_timer = None
+        self._fallback_urls.clear()
 
     # ------------------------------------------------------------------
     # Reply handling
     # ------------------------------------------------------------------
     def _on_reply_finished(self, reply: QNetworkReply) -> None:
         """
-        QNetworkAccessManager.finished signal မှ ခေါ်သည်။
-        ဒါပေမယ့် thumbnail reply မဟုတ်ရင် ignore လုပ်ရမည်။
+        QNetworkAccessManager.finished signal မှ ခေါ်မယ်
+        ဒါပေမယ့် thumbnail reply မဟုတ်ရင် ignore လုပ်မယ်
         """
         reply_request_id = reply.property("thumbnail_request_id")
         if reply_request_id is None:
@@ -166,13 +205,13 @@ class ThumbnailService(QObject):
                 pass
             self.timeout_timer = None
 
-        # Network error
+        # Network error ဖြစ်ပါက နောက် Fallback URL သို့ ပြောင်းဆွဲမည်
         if reply.error() != QNetworkReply.NetworkError.NoError:
             error_str = reply.errorString()
-            print(f"Thumbnail download error: {error_str}")
-            self.thumbnail_failed.emit(error_str)
+            print(f"Thumbnail URL failed ({reply.url().toString()}): {error_str}. Trying fallback...")
             self.current_reply = None
             reply.deleteLater()
+            self._start_next_download(reply_request_id)
             return
 
         # Data ဖတ်
@@ -182,30 +221,30 @@ class ThumbnailService(QObject):
             pixmap.loadFromData(data)
 
             if pixmap.isNull():
-                print("Thumbnail download failed: invalid image data.")
-                self.thumbnail_failed.emit("Invalid image data")
+                print("Thumbnail download failed: invalid image data. Trying fallback...")
                 self.current_reply = None
                 reply.deleteLater()
+                self._start_next_download(reply_request_id)
                 return
 
             # Success
+            self._fallback_urls.clear()
             self.thumbnail_ready.emit(pixmap)
             self.current_reply = None
             reply.deleteLater()
 
         except Exception as e:
             print(f"Error processing downloaded thumbnail: {e}")
-            self.thumbnail_failed.emit(str(e))
             self.current_reply = None
             reply.deleteLater()
+            self._start_next_download(reply_request_id)
 
     def _on_timeout(self, request_id: int) -> None:
-        """Timeout ဖြစ်ပါက failed emit"""
+        """ Timeout ဖြစ်ပါက Fallback သို့ ဆက်သွားမယ် """
         if request_id != self.current_request_id:
             return
 
-        print("Thumbnail download failed: timeout.")
-        self.thumbnail_failed.emit("Timeout")
+        print("Thumbnail download timeout. Trying fallback...")
 
         # Reply abort
         if self.current_reply is not None:
@@ -217,19 +256,33 @@ class ThumbnailService(QObject):
             self.current_reply = None
 
         self.timeout_timer = None
+        self._start_next_download(request_id)
 
     # ------------------------------------------------------------------
     # Scaling helper (View အတွက်)
     # ------------------------------------------------------------------
     @staticmethod
     def scale_for_label(pixmap: QPixmap) -> QPixmap:
-        """Label size (340x190) အတွက် scale"""
+        """ Label size (340x190) အတွက် scale """
         from PySide6.QtCore import Qt
-        return pixmap.scaled(
+
+        # KeepAspectRatioByExpanding ဖြင့် 340x190 ထက် မငယ်အောင် အပြည့်ဖြည့်
+        scaled_pixmap = pixmap.scaled(
             ThumbnailService.SCALED_WIDTH,
             ThumbnailService.SCALED_HEIGHT,
-            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.AspectRatioMode.KeepAspectRatioByExpanding,
             Qt.TransformationMode.SmoothTransformation,
+        )
+
+        # ပိုထွက်နေသော အစွန်းများကို Center Crop ပြုလုပ်၍ 340x190 ကွက်တိဖြတ်ယူ
+        x = (scaled_pixmap.width() - ThumbnailService.SCALED_WIDTH) // 2
+        y = (scaled_pixmap.height() - ThumbnailService.SCALED_HEIGHT) // 2
+
+        return scaled_pixmap.copy(
+            x,
+            y,
+            ThumbnailService.SCALED_WIDTH,
+            ThumbnailService.SCALED_HEIGHT,
         )
 
     # ------------------------------------------------------------------
@@ -243,16 +296,16 @@ class ThumbnailService(QObject):
         status_callback=None,
     ) -> str | None:
         """
-        HD Thumbnail ကို Save As dialog ဖြင့် သိမ်းသည်။
+        HD Thumbnail ကို Save As dialog ဖြင့်သိမ်းမယ်
 
         main.py ရဲ့ save_thumbnail() method ကို static utility
-        အဖြစ် ပြောင်းထားသည် (UI dialog လိုအပ်တာကြောင့် static မဖြစ်နိုင်
-        ပေမယ့် parent_widget ကို လက်ခံသည်)။
+        အဖြစ် ပြောင်းထားတဲ့ (UI dialog လိုအပ်တာကြောင့် static မဖြစ်နိုင်
+        ပေမယ့် parent_widget ကို လက်ခံနိုင်တယ်)။
 
         Args:
             parent_widget: QFileDialog ၏ parent
             info: yt-dlp info dict (self.info)
-            default_dir: သိမ်းမည့် folder
+            default_dir: သိမ်းမယ့် folder
             status_callback: status bar သို့ message ပို့ရန် callback(str)
 
         Returns:
@@ -271,7 +324,7 @@ class ThumbnailService(QObject):
             return None
 
         # 1. Best thumbnail URL
-        thumbnail_url = None
+        thumbnail_urls = []
         thumbnails = info.get("thumbnails", [])
         if thumbnails:
             sorted_thumbs = sorted(
@@ -279,14 +332,16 @@ class ThumbnailService(QObject):
                 key=lambda x: (x.get("width") or 0, x.get("height") or 0),
                 reverse=True,
             )
-            if sorted_thumbs:
-                thumbnail_url = sorted_thumbs[0].get("url")
+            thumbnail_urls = [t.get("url") for t in sorted_thumbs if t.get("url")]
 
         video_id = info.get("id")
-        if not thumbnail_url and video_id:
-            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        if video_id:
+            thumbnail_urls.extend([
+                f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+            ])
 
-        if not thumbnail_url:
+        if not thumbnail_urls:
             status("Thumbnail URL not found.")
             return None
 
@@ -321,39 +376,24 @@ class ThumbnailService(QObject):
         if not file_path.lower().endswith((".webp", ".jpg", ".jpeg", ".png")):
             file_path += ext
 
-        # 4. Download + save
-        try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36"
-                )
-            }
-            response = requests.get(thumbnail_url, headers=headers, timeout=10)
-
-            if response.status_code == 200:
-                with open(file_path, "wb") as f:
-                    f.write(response.content)
-                status(f"HD Thumbnail saved to: {file_path}")
-                return file_path
-
-            # fallback maxresdefault → hqdefault
-            if video_id and "maxresdefault" in thumbnail_url:
-                fallback_url = (
-                    f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
-                )
-                res_fallback = requests.get(
-                    fallback_url, headers=headers, timeout=10
-                )
-                if res_fallback.status_code == 200:
+        # 4. Download + save (Loop through candidates until success)
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36"
+            )
+        }
+        
+        for t_url in thumbnail_urls:
+            try:
+                response = requests.get(t_url, headers=headers, timeout=10)
+                if response.status_code == 200:
                     with open(file_path, "wb") as f:
-                        f.write(res_fallback.content)
+                        f.write(response.content)
                     status(f"Thumbnail saved to: {file_path}")
                     return file_path
+            except Exception:
+                continue
 
-            status("Failed to download thumbnail image.")
-            return None
-
-        except Exception as e:
-            status(f"Error saving thumbnail: {str(e)}")
-            return None
+        status("Failed to download thumbnail image.")
+        return None

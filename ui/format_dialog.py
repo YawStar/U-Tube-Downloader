@@ -1,5 +1,5 @@
 import os
-import shutil  # Drive Free Space စစ်ဆေးရန်
+import shutil
 from PySide6.QtWidgets import (QDialog, QTableWidget, QTableWidgetItem, QHeaderView, 
                                QAbstractItemView, QVBoxLayout, QHBoxLayout, QPushButton, 
                                QLabel, QFrame)
@@ -7,71 +7,60 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 class FormatDialog(QDialog):
-    """ Available Formats များကို တစ်ဆက်တည်း Segmented Buttons (All, Video Only, Audio Only)၊
-    Auto-Select စနစ်၊ Free Space စစ်ဆေးမှုစနစ်တို့ဖြင့် ပြသပေးမည့် Window """
+    """ Available Formats Window (High to Low Sort + HD/FHD/UHD Labels) """
 
-    # current_format_id ပါရာမီတာကို လက်ခံရန် ထည့်သွင်းခြင်း (Default: None)
     def __init__(self, json_data, current_format_id=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Available Formats")
-        self.resize(850, 550)
+        self.resize(1000, 580)
         
         self.raw_info = json_data
         self.parent_win = parent
-        self.parsed_formats = [] # Parse လုပ်ပြီးသား အချက်အလက်အားလုံး သိုလှောင်ရန်
-        self.current_filter = "All" # လက်ရှိ ရွေးထားတဲ့ Filter (Default: All)
+        self.parsed_formats = []
+        self.current_filter = "Default"
 
-        # လက်ရှိရွေးထားသော Format ID ကို စာသား (String) ပုံစံဖြင့် သိမ်းဆည်းမှတ်သားခြင်း
         self.saved_format_id = str(current_format_id) if current_format_id is not None else None
 
-        # Main Window ရဲ့ StyleSheet ကို အမွေဆက်ခံခြင်း
         if parent and hasattr(parent, 'styleSheet'):
             self.setStyleSheet(parent.styleSheet())
 
-        # ပင်မ Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(12)
 
         # -------------------------------------------------------------
-        # Segmented Control တည်ဆောက်ခြင်း
+        # Segmented Control (All / Video Only / Audio Only)
         # -------------------------------------------------------------
         filter_container_layout = QHBoxLayout()
 
-        # ခလုတ်များကို တစ်သားတည်းဖြစ်အောင် Container Frame တစ်ခုဆောက်ပြီး ထည့်ခြင်း
         self.segmented_frame = QFrame()
         self.segmented_frame.setObjectName("SegmentedControl")
         
-        # Frame ထဲရှိ ခလုတ်များ ကပ်နေစေရန် Spacing ကို 0 ထားပြီး Margin ကို သပ်ရပ်အောင် ချိန်ခြင်း
         segmented_layout = QHBoxLayout(self.segmented_frame)
         segmented_layout.setContentsMargins(2, 2, 2, 2)
         segmented_layout.setSpacing(0)
 
-        # ခလုတ်များ ဖန်တီးခြင်း
-        self.btn_filter_all = QPushButton("All")
+        self.btn_filter_default = QPushButton("Default")
         self.btn_filter_video = QPushButton("Video Only")
         self.btn_filter_audio = QPushButton("Audio Only")
         
-        self.btn_filter_all.setObjectName("btn_all")
+        self.btn_filter_default.setObjectName("btn_default")
         self.btn_filter_video.setObjectName("btn_video")
         self.btn_filter_audio.setObjectName("btn_audio")
 
-        for btn in [self.btn_filter_all, self.btn_filter_video, self.btn_filter_audio]:
+        for btn in [self.btn_filter_default, self.btn_filter_video, self.btn_filter_audio]:
             btn.setCheckable(True)
             btn.setMinimumHeight(30)
             btn.setMinimumWidth(100)
-            # Focus Box အစစ်အမှန်ကြီး ပတ်လည်ပေါ်နေခြင်းကို ဖျောက်ရန် FocusPolicy သတ်မှတ်ခြင်း
             btn.setFocusPolicy(Qt.FocusPolicy.NoFocus) 
             segmented_layout.addWidget(btn)
 
-        # အဝိုင်းစတိုင်လ် QSS stylesheet
         self.segmented_frame.setStyleSheet("""
             QFrame#SegmentedControl {
                 background-color: #1e293b;
                 border: 1px solid #334155;
                 border-radius: 8px;
             }
-            
             QPushButton {
                 background-color: transparent;
                 color: #94a3b8;
@@ -80,46 +69,33 @@ class FormatDialog(QDialog):
                 font-weight: 500;
                 padding: 5px 15px;
             }
-            
             QPushButton:hover {
                 color: #ffffff;
                 background-color: #273549;
             }
-            
-            /* နှိပ်လိုက်တဲ့အခါ တောက်ပြောင်ပြီး အနားသတ်ဝိုင်းဝိုင်းလေးနဲ့ ထွက်လာမယ့် အစိမ်းရောင် Active State */
             QPushButton:checked {
                 background-color: #2ecc71;
                 color: #000000;
                 font-weight: bold;
                 border-radius: 6px;
             }
-            
-            /* ခလုတ်များ တစ်ခုနဲ့တစ်ခုအကူးအစပ်တွင် ပိုမိုသပ်ရပ်စေရန် Border Radius ထိန်းချုပ်မှု */
-            QPushButton#btn_all:checked {
-                border-top-right-radius: 6px;
-                border-bottom-right-radius: 6px;
-            }
-            QPushButton#btn_audio:checked {
-                border-top-left-radius: 6px;
-                border-bottom-left-radius: 6px;
-            }
         """)
 
         filter_container_layout.addWidget(self.segmented_frame)
-        filter_container_layout.addStretch() # ညာဘက်သို့ ကပ်ထားရန်
+        filter_container_layout.addStretch()
         layout.addLayout(filter_container_layout)
 
         # -------------------------------------------------------------
-        # QTableWidget (ဇယားကွက်) တည်ဆောက်ခြင်း
+        # QTableWidget Setup
         # -------------------------------------------------------------
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(5)
+        self.tableWidget.setColumnCount(10)
         self.tableWidget.setHorizontalHeaderLabels([
-            "Format ID", "Type", "Resolution / Quality", "Extension", "File Size"
+            "Select", "Quality", "Extension", "Resolution", "File Size", "Codec", "Audio", "Language", "FPS", "HDR"
         ])
         
         self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tableWidget.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.tableWidget.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tableWidget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tableWidget.setAlternatingRowColors(True)
         
@@ -127,9 +103,11 @@ class FormatDialog(QDialog):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
+        self.tableWidget.setColumnWidth(5, 140)
+
         layout.addWidget(self.tableWidget)
 
-        # Table Widget အတွက် Hover ရော၊ Selection အရောင်ပါ သီးသန့်ခွဲခြားသတ်မှတ်ခြင်း
         self.tableWidget.setStyleSheet("""
             QTableWidget::item:hover {
                 background-color: #334155 !important;
@@ -143,7 +121,7 @@ class FormatDialog(QDialog):
         """)
 
         # -------------------------------------------------------------
-        # အောက်ခြေ စာသားနှင့် ခလုတ်များ (Free Space Warning & Buttons)
+        # Bottom Controls & Actions
         # -------------------------------------------------------------
         bottom_layout = QHBoxLayout()
         
@@ -156,7 +134,6 @@ class FormatDialog(QDialog):
         self.btn_select = QPushButton("Select Format")
         self.btn_cancel = QPushButton("Cancel")
 
-        # ခလုတ်များကို သီးသန့် Control လုပ်နိုင်ရန် Object Name များ တပ်
         self.btn_select.setObjectName("btn_dialog_action")
         self.btn_clear_select.setObjectName("btn_dialog_secondary")
         self.btn_cancel.setObjectName("btn_dialog_secondary")
@@ -170,13 +147,10 @@ class FormatDialog(QDialog):
         bottom_layout.addWidget(self.btn_cancel)
         layout.addLayout(bottom_layout)
 
-        # Main Window ရဲ့ StyleSheet ကို အမွေဆက်ခံခြင်း
         if parent and hasattr(parent, 'styleSheet'):
             self.setStyleSheet(parent.styleSheet())
 
-        # Global CSS ၏ ဖိနှိပ်မှုကို Overwrite လုပ်ရန် FormatDialog အတွက် သီးသန့် Style ထပ်ပေါင်းထည့်ခြင်း
         self.setStyleSheet(self.styleSheet() + """
-            /* Select Format ခလုတ် (Primary Accent Button) */
             QPushButton#btn_dialog_action {
                 background-color: #2563eb !important;
                 color: #ffffff !important;
@@ -188,13 +162,6 @@ class FormatDialog(QDialog):
             QPushButton#btn_dialog_action:hover {
                 background-color: #1d4ed8 !important;
             }
-            QPushButton#btn_dialog_action:disabled {
-                background-color: #334155 !important;
-                color: #64748b !important;
-                border: 1px solid #475569 !important;
-            }
-
-            /* Select None နှင့် Cancel ခလုတ်များ (Secondary Dark Buttons) */
             QPushButton#btn_dialog_secondary {
                 background-color: #1e293b !important;
                 color: #f8fafc !important;
@@ -205,288 +172,306 @@ class FormatDialog(QDialog):
             }
             QPushButton#btn_dialog_secondary:hover {
                 background-color: #334155 !important;
-                border-color: #64748b !important;
-            }
-            QPushButton#btn_dialog_secondary:pressed {
-                background-color: #0f172a !important;
             }
         """)
         
         # -------------------------------------------------------------
-        # Signals နှင့် ခလုတ်နှိပ်ခြင်း Logic များ
+        # Signals Connecting
         # -------------------------------------------------------------
         self.btn_clear_select.clicked.connect(self.clear_and_accept)
         self.btn_select.clicked.connect(self.accept)
         self.btn_cancel.clicked.connect(self.reject)
-        self.tableWidget.itemDoubleClicked.connect(lambda item: self.accept())
         
-        # Segmented Filter Buttons များအတွက် Click Signal ချိတ်ဆက်ခြင်း
-        self.btn_filter_all.clicked.connect(lambda: self.change_filter("All"))
+        self.tableWidget.itemDoubleClicked.connect(self.on_item_double_clicked)
+        self.tableWidget.itemClicked.connect(self.on_item_clicked)
+        
+        self.btn_filter_default.clicked.connect(lambda: self.change_filter("Default"))
         self.btn_filter_video.clicked.connect(lambda: self.change_filter("Video Only"))
         self.btn_filter_audio.clicked.connect(lambda: self.change_filter("Audio Only"))
         
-        # Table ထဲမှာ စာကြောင်း ရွေးချယ်မှု ပြောင်းလဲတိုင်း Disk Space စစ်ခိုင်းခြင်း
-        self.tableWidget.itemSelectionChanged.connect(self.check_disk_space_status)
+        self.tableWidget.itemChanged.connect(self.on_item_changed)
 
-        # ဒေတာများကို ပထမဦးဆုံးအကြိမ် Parsing ပြုလုပ်ခြင်း
         self.prepare_data()
+        self.change_filter("Default")
+
+    def on_item_clicked(self, item):
+        self.tableWidget.blockSignals(True)
+        clicked_row = item.row()
         
-        # စဖွင့်ချင်း "All" ခလုတ်အား Active အဖြစ် သတ်မှတ်ခြင်း
-        self.change_filter("All")
+        if self.current_filter == "Audio Only":
+            current_state = self.tableWidget.item(clicked_row, 0).checkState()
+            new_state = Qt.CheckState.Unchecked if current_state == Qt.CheckState.Checked else Qt.CheckState.Checked
+            self.tableWidget.item(clicked_row, 0).setCheckState(new_state)
+        else:
+            for row in range(self.tableWidget.rowCount()):
+                row_item = self.tableWidget.item(row, 0)
+                if row_item:
+                    if row == clicked_row:
+                        row_item.setCheckState(Qt.CheckState.Checked)
+                    else:
+                        row_item.setCheckState(Qt.CheckState.Unchecked)
+                    
+        self.tableWidget.blockSignals(False)
+        self.check_disk_space_status()
+
+    def on_item_double_clicked(self, item):
+        if self.current_filter in ["Video Only", "Audio Only", "Default"]:
+            row = item.row()
+            id_item = self.tableWidget.item(row, 0)
+            if id_item:
+                id_item.setCheckState(Qt.CheckState.Checked)
+            
+            self.check_disk_space_status()
+            self.accept()
+
+    def on_item_changed(self, item):
+        if item.column() == 0:
+            self.check_disk_space_status()
 
     def change_filter(self, filter_type):
-        """ ခလုတ်တစ်ခုနှိပ်လျှင် Frame တစ်ခုတည်းအတွင်း၌ တစ်သားတည်း ရွေ့သွားသကဲ့သို့ ပုံစံမျိုး ထိန်းချုပ်ခြင်း """
-        # ခလုတ်မပြောင်းခင် User လက်ရှိတကယ် ရွေးချယ်ထားတဲ့ Row ရဲ့ ID ကို ဖမ်းယူပြီး saved_format_id ထဲ ခဏပြောင်းသိမ်းလိုက်ခြင်း
-        # ဒါမှ Filter ပြောင်းသွားတဲ့အခါ လက်ရှိရွေးထားတဲ့ ID အမှန်ကို သိရှိပြီး လိုက်ရှာနိုင်မှာ ဖြစ်ပါတယ်
-        current_active_id = self.get_selected_format_id()
-        if current_active_id:
-            self.saved_format_id = current_active_id
+        current_active_ids = self.get_selected_format_id()
+        if current_active_ids:
+            self.saved_format_id = current_active_ids
 
         self.current_filter = filter_type
         
-        # Toggle Status များကို စနစ်တကျ လိုက်ပြောင်းပေးခြင်း
-        self.btn_filter_all.setChecked(filter_type == "All")
+        self.btn_filter_default.setChecked(filter_type == "Default")
         self.btn_filter_video.setChecked(filter_type == "Video Only")
         self.btn_filter_audio.setChecked(filter_type == "Audio Only")
         
-        # ဇယားကွက်ကို Filter အသစ်ဖြင့် ပြန်လည်ရေးဆွဲခြင်း
+        if filter_type == "Audio Only":
+            self.tableWidget.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        else:
+            self.tableWidget.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+
         self.refresh_table_view()
 
     def prepare_data(self):
-        """ yt-dlp JSON မှ Format များကို ကြိုတင် Parse လုပ်၍ သိမ်းဆည်းထားခြင်း """
         if not self.raw_info: return
         formats_list = self.raw_info.get('formats', [])
 
         def format_size_str(bytes_size):
-            if not bytes_size: return "Unknown Size"
+            if not bytes_size: return "N/A"
             bytes_size = float(bytes_size)
             for unit in ['Bytes', 'KB', 'MB', 'GB']:
                 if bytes_size < 1024.0: return f"{bytes_size:.2f} {unit}"
                 bytes_size /= 1024.0
             return f"{bytes_size:.2f} TB"
 
-        for f in formats_list:
-            if f.get('format_note') == 'storyboard': continue
+        self.parsed_formats.clear()
 
-            vcodec = f.get('vcodec', 'none')
-            acodec = f.get('acodec', 'none')
+        extractor = str(self.raw_info.get('extractor_key', '')).lower()
+        is_youtube = 'youtube' in extractor
+
+        for f in formats_list:
+            if f.get('format_note') == 'storyboard' or f.get('ext') == 'm4e': 
+                continue
+
+            vcodec = str(f.get('vcodec', 'none'))
+            acodec = str(f.get('acodec', 'none'))
+            
+            has_video = vcodec != 'none' and vcodec != 'None' and bool(vcodec)
+            has_audio = acodec != 'none' and acodec != 'None' and bool(acodec)
+
+            # Non-YouTube sites များတွင် Codec တန်ဖိုး မပါလာလျှင်လည်း format အဖြစ် အသိအမှတ်ပြု
+            if not is_youtube and not has_video and not has_audio:
+                if f.get('video_ext') != 'none' or f.get('resolution') or f.get('height') or f.get('format_id'):
+                    has_video = True
+
+            if is_youtube and not has_video and not has_audio:
+                continue
+
             filesize = f.get('filesize') or f.get('filesize_approx') or 0
             height = f.get('height') or 0
+            fps = f.get('fps') or 0
+            abr = f.get('abr') or 0
             
-            if vcodec != 'none' and acodec != 'none': media_type = "Video + Audio"
-            elif vcodec != 'none': media_type = "Video Only"
-            elif acodec != 'none': media_type = "Audio Only"
-            else: media_type = "Unknown"
+            # Custom Quality Labels
+            if height >= 4320:  # 8K
+                k_val = round(height * (16 / 9) / 1000)
+                quality_str = f"FUHD ({k_val}K)"
+            elif height >= 2160: # 4K
+                quality_str = "UHD (4K)"
+            elif height >= 1440: # 2K
+                quality_str = "FHD (2K)"
+            elif height >= 1080: # 1080p
+                quality_str = f"HD ({height}p)"
+            elif height >= 720:  # 720p
+                quality_str = f"HD ({height}p)"
+            elif height >= 480:  # 480p
+                quality_str = f"SD ({height}p)"
+            elif height > 0:
+                quality_str = f"Low ({height}p)"
+            else:
+                quality_str = str(f.get('format_note') or f.get('format_id') or 'Standard')
+
+            if has_video and has_audio:
+                codec_str = f"{vcodec} / {acodec}"
+            elif has_video and vcodec != 'none':
+                codec_str = vcodec
+            elif has_audio and acodec != 'none':
+                codec_str = acodec
+            else:
+                codec_str = f.get('ext', 'N/A').upper()
+            
+            res_str = f.get('resolution', 'N/A')
+            if not has_video and is_youtube: res_str = "N/A"
+
+            if has_video and has_audio:
+                media_type = "Video + Audio"
+            elif has_video:
+                media_type = "Video Only" if is_youtube else "Video"
+            elif has_audio:
+                media_type = "Audio Only"
+            else:
+                media_type = "Standard"
+
+            dynamic_range = f.get('dynamic_range', 'SDR')
+            hdr_str = dynamic_range if dynamic_range and dynamic_range != 'SDR' else "SDR"
 
             self.parsed_formats.append({
-                "format_id": f.get('format_id', 'N/A'),
+                "format_id": str(f.get('format_id', 'N/A')),
+                "quality": quality_str,
                 "extension": f.get('ext', 'N/A').upper(),
-                "type": media_type,
-                "quality_note": f.get('format_note', f.get('resolution', 'N/A')),
-                "resolution": f.get('resolution', 'N/A'),
+                "resolution": res_str,
                 "height": height, 
                 "raw_size": filesize, 
-                "file_size_str": format_size_str(filesize)
+                "file_size_str": format_size_str(filesize),
+                "codec": codec_str,
+                "type": media_type,
+                "has_audio": has_audio,
+                "has_video": has_video,
+                "language": f.get('language') or "N/A",
+                "raw_fps": int(fps) if fps else 0,
+                "fps": f"{int(fps)}fps" if fps else "N/A",
+                "hdr": hdr_str,
+                "abr": abr
             })
 
-    def refresh_table_view1(self):
-        """ ရွေးချယ်ထားသော Filter အလိုက် ဇယားကွက်ကို တိကျစွာ ပြန်လည်ရေးဆွဲပေးခြင်း """
-        filtered_list = []
-        for f in self.parsed_formats:
-            if self.current_filter == "Video Only" and f['type'] != "Video Only": continue
-            if self.current_filter == "Audio Only" and f['type'] != "Audio Only": continue
-            filtered_list.append(f)
-
-        self.tableWidget.setRowCount(len(filtered_list))
-        
-        video_color = QColor("#1e293b")
-        audio_color = QColor("#064e3b")
-        muxed_color = QColor("#111827") 
-        
-        best_row_index = 0
-        max_height = -1
-
-        for row, item_info in enumerate(filtered_list):
-            item_id = QTableWidgetItem(item_info['format_id'])
-            item_type = QTableWidgetItem(item_info['type'])
-            item_quality = QTableWidgetItem(f"{item_info['resolution']} ({item_info['quality_note']})")
-            item_ext = QTableWidgetItem(item_info['extension'])
-            item_size = QTableWidgetItem(item_info['file_size_str'])
-
-            item_id.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_type.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_ext.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_size.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-            if item_info['type'] == "Video Only":
-                current_color = video_color
-            elif item_info['type'] == "Audio Only":
-                current_color = audio_color
-            else:
-                current_color = muxed_color 
-
-            for item in [item_id, item_type, item_quality, item_ext, item_size]:
-                item.setBackground(current_color)
-
-            item_id.setData(Qt.ItemDataRole.UserRole, item_info)
-
-            self.tableWidget.setItem(row, 0, item_id)
-            self.tableWidget.setItem(row, 1, item_type)
-            self.tableWidget.setItem(row, 2, item_quality)
-            self.tableWidget.setItem(row, 3, item_ext)
-            self.tableWidget.setItem(row, 4, item_size)
-
-            if "Video" in item_info['type'] and item_info['height'] > max_height:
-                max_height = item_info['height']
-                best_row_index = row
-
-        if len(filtered_list) > 0:
-            self.tableWidget.selectRow(best_row_index)
-            self.tableWidget.scrollToItem(self.tableWidget.item(best_row_index, 0))
+        # High to Low Sort
+        self.parsed_formats.sort(
+            key=lambda x: (x['height'], x['raw_fps'], x['abr'], x['raw_size']), 
+            reverse=True
+        )
 
     def refresh_table_view(self):
-        """ ရွေးချယ်ထားသော Filter အလိုက် ဇယားကွက်ကို တိကျစွာ ပြန်လည်ရေးဆွဲပေးခြင်း 
-        (Auto-Select မလုပ်တော့ဘဲ Best Row ကို သီးသန့် Highlight အရောင်ဖြင့်သာ ပြသခြင်း) """
+        self.tableWidget.blockSignals(True)
+
+        extractor = str(self.raw_info.get('extractor_key', '')).lower()
+        is_youtube = 'youtube' in extractor
+
         filtered_list = []
         for f in self.parsed_formats:
-            if self.current_filter == "Video Only" and f['type'] != "Video Only": continue
-            if self.current_filter == "Audio Only" and f['type'] != "Audio Only": continue
-            filtered_list.append(f)
+            if not is_youtube:
+                # Non-YouTube များအတွက် ရသမျှ Formats အကုန်လုံးကို ပြသ
+                filtered_list.append(f)
+            else:
+                if self.current_filter == "Default":
+                    if f['has_video']: 
+                        filtered_list.append(f)
+                elif self.current_filter == "Video Only":
+                    if f['type'] == "Video Only": 
+                        filtered_list.append(f)
+                elif self.current_filter == "Audio Only":
+                    if f['type'] == "Audio Only": 
+                        filtered_list.append(f)
 
         self.tableWidget.setRowCount(len(filtered_list))
         
-        video_color = QColor("#1e293b")
-        audio_color = QColor("#064e3b")
-        muxed_color = QColor("#111827") 
-        
-        # Best Row ကို ရှာဖွေရန် Variable များ
-        best_row_index = -1
-        max_height = -1
-        
-        # ယခင်ရွေးချယ်ထားခဲ့ဖူးသော ID တည်ရှိသည့် စာကြောင်း (Row) ကို သိရှိရန်
-        target_select_row = -1
+        saved_ids = [s.split('+')[0] for s in self.saved_format_id.split("+")] if self.saved_format_id else []
 
-        # ပထမအဆင့် - အကောင်းဆုံး လိုင်း (Best Quality Row) ဘယ်နေရာမှာလဲဆိုတာ အရင်ရှာဖွေခြင်း
         for row, item_info in enumerate(filtered_list):
-            if "Video" in item_info['type'] and item_info['height'] > max_height:
-                max_height = item_info['height']
-                best_row_index = row
-                
-            # လက်ရှိ Row ရဲ့ ID က ယခင်ရွေးခဲ့ဖူးတဲ့ ID ဖြစ်နေသလား စစ်ဆေးခြင်း
-            if self.saved_format_id and item_info['format_id'] == self.saved_format_id:
-                target_select_row = row
+            item_id = QTableWidgetItem("")
+            item_id.setFlags(item_id.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            
+            if item_info['format_id'] in saved_ids:
+                item_id.setCheckState(Qt.CheckState.Checked)
+            else:
+                item_id.setCheckState(Qt.CheckState.Unchecked)
 
-        # ဒုတိယအဆင့် - ဇယားကွက်ထဲသို့ Data များ ထည့်သွင်းခြင်း
-        for row, item_info in enumerate(filtered_list):
-            item_id = QTableWidgetItem(item_info['format_id'])
-            item_type = QTableWidgetItem(item_info['type'])
-            item_quality = QTableWidgetItem(f"{item_info['resolution']} ({item_info['quality_note']})")
+            item_quality = QTableWidgetItem(item_info['quality'])
             item_ext = QTableWidgetItem(item_info['extension'])
+            item_res = QTableWidgetItem(item_info['resolution'])
             item_size = QTableWidgetItem(item_info['file_size_str'])
+            item_codec = QTableWidgetItem(item_info['codec'])
+            
+            if item_info['type'] in ["Video + Audio", "Video", "Standard"]:
+                audio_text = "✓ Native" if not is_youtube else "✓ Has Audio"
+                audio_color = QColor("#22c55e")
+            elif item_info['type'] == "Video Only":
+                if self.current_filter == "Default":
+                    audio_text = "Auto"
+                    audio_color = QColor("#f59e0b")
+                else:
+                    audio_text = "No Audio"
+                    audio_color = QColor("#ef4444")
+            else:
+                audio_text = "Audio Track"
+                audio_color = QColor("#3b82f6")
+
+            item_audio = QTableWidgetItem(audio_text)
+            item_lang = QTableWidgetItem(item_info['language'])
+            item_fps = QTableWidgetItem(item_info['fps'])
+            item_hdr = QTableWidgetItem(item_info['hdr'])
+
+            # Colors & Styling based on Quality
+            if item_info['height'] >= 1080:
+                item_quality.setForeground(QColor("#2ecc71"))
+            elif item_info['height'] >= 720:
+                item_quality.setForeground(QColor("#3b82f6"))
+            else:
+                item_quality.setForeground(QColor("#f59e0b"))
+
+            item_audio.setForeground(audio_color)
+            
+            if item_info['raw_fps'] >= 50:
+                item_fps.setForeground(QColor("#22c55e"))
+            elif item_info['raw_fps'] > 0:
+                item_fps.setForeground(QColor("#f59e0b"))
+
+            if item_info['hdr'] != "SDR":
+                item_hdr.setForeground(QColor("#22c55e"))
+            else:
+                item_hdr.setForeground(QColor("#94a3b8"))
 
             item_id.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_type.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             item_ext.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_res.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             item_size.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-            # မူရင်း Type အလိုက် Background အရောင် သတ်မှတ်ခြင်း
-            if item_info['type'] == "Video Only":
-                current_color = video_color
-            elif item_info['type'] == "Audio Only":
-                current_color = audio_color
-            else:
-                current_color = muxed_color 
-
-            for item in [item_id, item_type, item_quality, item_ext, item_size]:
-                item.setBackground(current_color)
-                
-                # အကောင်းဆုံး Format (Best Row) ဖြစ်ပါက အစိမ်းရောင်ဖျော့ဖျော့ စာသားဖြင့် Highlight လုပ်ပေးခြင်း
-                if row == best_row_index:
-                    # စာသားအရောင်ကို အစိမ်းရောင်တောက်တောက် (#2ecc71) သို့မဟုတ် ရွှေရောင် ပြောင်းပေးနိုင်ပါတယ်
-                    item.setForeground(QColor("#2ecc71"))
-                    # စာသားကိုပါ Bold (အထူ) လုပ်ပေးပြီး ပိုမိုသိသာစေခြင်း
-                    font = item.font()
-                    font.setBold(True)
-                    item.setFont(font)
+            item_codec.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_audio.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_lang.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_fps.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_hdr.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
             item_id.setData(Qt.ItemDataRole.UserRole, item_info)
 
-            self.tableWidget.setItem(row, 0, item_id)
-            self.tableWidget.setItem(row, 1, item_type)
-            self.tableWidget.setItem(row, 2, item_quality)
-            self.tableWidget.setItem(row, 3, item_ext)
-            self.tableWidget.setItem(row, 4, item_size)
+            items = [item_id, item_quality, item_ext, item_res, item_size, item_codec, item_audio, item_lang, item_fps, item_hdr]
+            for col, item in enumerate(items):
+                self.tableWidget.setItem(row, col, item)
 
-        # တိကျသော Selection Logic]
-        # အသုံးပြုသူ ယခင်က ရွေးချယ်ထားခဲ့ဖူးသော ID ဇယားကွက်ထဲတွင် တည်ရှိနေပါက ၎င်းကို အပြာရောင် Selected Highlight ဖြင့် တန်းပြသပေးမည်
-        if target_select_row != -1:
-            self.tableWidget.selectRow(target_select_row)
-            self.tableWidget.scrollToItem(self.tableWidget.item(target_select_row, 0))
-        # Filter အကူးအပြောင်းကြောင့် လက်ရှိဇယားထဲမှာ အဆိုပါ ID မရှိတော့ပါက
-        # အတင်းအဓမ္မ တခြား Row တွေကို လျှောက်မရွေးတော့ဘဲ Selection လုံးဝ ဖြုတ်ပစ်ပါမည်။ ဘာမှမရွေးထားတဲ့ သန့်ရှင်းတဲ့ အခြေအနေ ဖြစ်သွားပါမယ်။
-        else:
-            self.tableWidget.clearSelection()
-            # Selection မရှိသော်လည်း အမြင်အဆင်ပြေစေရန် အကောင်းဆုံးလိုင်းဆီသို့ Scroll သာ ဆွဲပေးထားပါမည်
-            if best_row_index != -1:
-                self.tableWidget.scrollToItem(self.tableWidget.item(best_row_index, 0))
+            if item_info['format_id'] in saved_ids:
+                self.tableWidget.selectRow(row)
 
-    def check_disk_space_status1(self):
-        """ ရွေးချယ်လိုက်သော Format ၏ ဖိုင်ဆိုဒ်သည် ဒေါင်းလုဒ်လုပ်မည့် Drive ၏ Free Space ထက် လောက်/မလောက် စစ်ဆေးခြင်း """
-        selected_ranges = self.tableWidget.selectedRanges()
-        if not selected_ranges:
-            self.lbl_space_info.setText("Select a format to check disk space...")
-            self.lbl_space_info.setStyleSheet("color: #ffffff;")
-            self.btn_select.setEnabled(False)
-            return
-
-        selected_row = selected_ranges[0].topRow()
-        item_info = self.tableWidget.item(selected_row, 0).data(Qt.ItemDataRole.UserRole)
-        
-        if not item_info: return
-
-        file_bytes = item_info['raw_size']
-        download_dir = "./"
-        
-        if self.parent_win and hasattr(self.parent_win, 'downloadFolderInput'):
-            potential_dir = self.parent_win.downloadFolderInput.text().strip()
-            if os.path.exists(potential_dir):
-                download_dir = potential_dir
-
-        try:
-            total, used, free_bytes = shutil.disk_usage(os.path.abspath(download_dir))
-            def to_gb(b): return b / (1024**3)
-
-            if file_bytes == 0:
-                self.lbl_space_info.setText(f"Drive Space: {to_gb(free_bytes):.2f} GB Free (Format size is approximate/unspecified).")
-                self.lbl_space_info.setStyleSheet("color: #00A2FF;") 
-                self.btn_select.setEnabled(True)
-            elif free_bytes < (file_bytes * 1.2):
-                self.lbl_space_info.setText(f"⚠️ Insufficient Space! Required: {to_gb(file_bytes):.2f} GB | Free: {to_gb(free_bytes):.2f} GB")
-                self.lbl_space_info.setStyleSheet("color: #ff3333; font-weight: bold;") 
-                self.btn_select.setEnabled(True) 
-            else:
-                self.lbl_space_info.setText(f"✅ Space Available. File Size: {to_gb(file_bytes):.2f} GB | Free Space: {to_gb(free_bytes):.2f} GB")
-                self.lbl_space_info.setStyleSheet("color: #22c55e;") 
-                self.btn_select.setEnabled(True)
-        except Exception:
-            self.lbl_space_info.setText("Could not determine disk free space.")
-            self.btn_select.setEnabled(True)
+        self.tableWidget.blockSignals(False)
+        self.check_disk_space_status()
 
     def check_disk_space_status(self):
-        """ ဖိုင်ဆိုဒ်အလိုက် လိုက်ဖက်မည့် ယူနစ် (MB/GB) ဖြင့် အောက်ခြေတွင် ကွက်တိ ပြသခြင်း """
-        selected_ranges = self.tableWidget.selectedRanges()
-        if not selected_ranges:
+        checked_rows_info = []
+        for row in range(self.tableWidget.rowCount()):
+            item = self.tableWidget.item(row, 0)
+            if item and item.checkState() == Qt.CheckState.Checked:
+                item_info = item.data(Qt.ItemDataRole.UserRole)
+                if item_info:
+                    checked_rows_info.append(item_info)
+
+        if not checked_rows_info:
             self.lbl_space_info.setText("Select a format to check disk space...")
             self.lbl_space_info.setStyleSheet("color: #ffffff;")
             self.btn_select.setEnabled(False)
             return
 
-        selected_row = selected_ranges[0].topRow()
-        item_info = self.tableWidget.item(selected_row, 0).data(Qt.ItemDataRole.UserRole)
-        
-        if not item_info: return
-
-        file_bytes = item_info['raw_size']
+        total_file_bytes = sum([f['raw_size'] for f in checked_rows_info])
         download_dir = "./"
         
         if self.parent_win and hasattr(self.parent_win, 'downloadFolderInput'):
@@ -497,7 +482,6 @@ class FormatDialog(QDialog):
         try:
             total, used, free_bytes = shutil.disk_usage(os.path.abspath(download_dir))
             
-            # ဖိုင်ဆိုဒ်ကို ဇယားကွက်ထဲကအတိုင်း လိုက်ဖက်မည့် စာသားအဖြစ် ပြောင်းလဲပေးမည့် Function
             def dynamic_format_size(bytes_size):
                 if not bytes_size: return "0 Bytes"
                 bytes_size = float(bytes_size)
@@ -506,23 +490,18 @@ class FormatDialog(QDialog):
                     bytes_size /= 1024.0
                 return f"{bytes_size:.2f} TB"
 
-            # အောက်ခြေအတွက် သီးသန့် တွက်ချက်မှုများ
-            file_size_display = dynamic_format_size(file_bytes)
+            file_size_display = dynamic_format_size(total_file_bytes)
             free_gb_display = f"{free_bytes / (1024**3):.2f} GB"
 
-            # ဖိုင်ဆိုဒ်က ၀ ဖြစ်နေရင်
-            if file_bytes == 0:
+            if total_file_bytes == 0:
                 self.lbl_space_info.setText(f"Drive Space: {free_gb_display} Free (Format size is approximate/unspecified).")
                 self.lbl_space_info.setStyleSheet("color: #00A2FF;") 
                 self.btn_select.setEnabled(True)
-            # ❌ စက်ထဲမှာ နေရာမလောက်ဘူးဆိုရင်
-            elif free_bytes < (file_bytes * 1.2):
+            elif free_bytes < (total_file_bytes * 1.2):
                 self.lbl_space_info.setText(f"⚠️ Insufficient Space! Required: {file_size_display} | Free: {free_gb_display}")
                 self.lbl_space_info.setStyleSheet("color: #ff3333; font-weight: bold;") 
                 self.btn_select.setEnabled(True) 
-            # ✅ နေရာလောက်တယ်ဆိုရင်
             else:
-                # 🎯 ဤနေရာတွင် ဇယားကွက်ထဲကအတိုင်း 91.61 MB ဆိုလျှင် 91.61 MB အတိုင်း ကွက်တိ ပြသသွားမည် ဖြစ်ပါသည်
                 self.lbl_space_info.setText(f"✅ Space Available. File Size: {file_size_display} | Free Space: {free_gb_display}")
                 self.lbl_space_info.setStyleSheet("color: #22c55e;") 
                 self.btn_select.setEnabled(True)
@@ -531,88 +510,30 @@ class FormatDialog(QDialog):
             self.btn_select.setEnabled(True)
     
     def get_selected_format_id(self):
-        """ အသုံးပြုသူ လက်ရှိ ရွေးချယ်ထားသော စာကြောင်းအားလုံးမှ Format ID များကို '+' ဖြင့် ချိတ်ဆက်ပြီး ပြန်ပေးမည့် Method """
-        selected_ranges = self.tableWidget.selectedRanges()
-        if not selected_ranges: 
-            return None
-            
-        selected_rows = set()
-        for r in selected_ranges:
-            for row in range(r.topRow(), r.bottomRow() + 1):
-                selected_rows.add(row)
+        checked_ids = []
+        extractor = str(self.raw_info.get('extractor_key', '')).lower() if self.raw_info else ''
+        is_youtube = 'youtube' in extractor
+
+        for row in range(self.tableWidget.rowCount()):
+            item = self.tableWidget.item(row, 0)
+            if item and item.checkState() == Qt.CheckState.Checked:
+                item_info = item.data(Qt.ItemDataRole.UserRole)
+                if item_info:
+                    f_id = item_info['format_id']
+                    if is_youtube and self.current_filter == "Default" and item_info['type'] == "Video Only":
+                        checked_ids.append(f"{f_id}+bestaudio")
+                    else:
+                        checked_ids.append(f_id)
                 
-        format_ids = []
-        for row in sorted(selected_rows):
-            item = self.tableWidget.item(row, 0) # Column 0 သည် Format ID ဖြစ်သည်
-            if item:
-                format_ids.append(item.text())
-                
-        if format_ids:
-            # ဥပမာ- ['137', '140'] ဖြစ်ခဲ့လျှင် '137+140' ဟု ပြန်ပေးမည်။ yt-dlp မှ အလိုအလျောက် တွဲပြီး Download ဆွဲသွားပါလိမ့်မည်။
-            return "+".join(format_ids)
+        if checked_ids:
+            return "+".join(checked_ids)
         return None
     
     def clear_and_accept(self):
-        """ ဇယားကွက်ထဲတွင် ရွေးချယ်ထားမှုများကို လုံးဝဖယ်ထုတ်ပြီး ပိတ်ပေးမည် (None အခြေအနေသို့ ရောက်ရှိစေရန်) """
-        self.tableWidget.clearSelection() # ဇယားကွက် Selection ဖြုတ်ပစ်ခြင်း
-        self.accept() # Window ကို ပိတ်ပြီး အောင်မြင်စွာ ထွက်ခွာခြင်း
-
-    def on_selection_changed(self):
-        """ အသုံးပြုသူမှ Table ထဲတွင် Row တစ်ခု (သို့မဟုတ်) တစ်ခုထက်ပို၍ ရွေးချယ်လိုက်သည့်အခါ စုစုပေါင်း File Size ကို တွက်ချက်ပေးမည့် နေရာ """
-        # လက်ရှိ ရွေးချယ်ထားသော Ranges များကို ယူသည်
-        selected_ranges = self.tableWidget.selectedRanges()
-        if not selected_ranges:
-            self.lbl_space_info.setText("Select a video and audio format to download.")
-            self.lbl_space_info.setStyleSheet("color: #94a3b8;")
-            self.btn_select.setEnabled(False)
-            return
-
-        # ရွေးချယ်ထားသော ရိုး (Rows) အားလုံးကို စုစည်းမည် (ထပ်နေတာတွေ ဖယ်ဖို့ set သုံးပါမည်)
-        selected_rows = set()
-        for r in selected_ranges:
-            for row in range(r.topRow(), r.bottomRow() + 1):
-                selected_rows.add(row)
-
-        total_bytes = 0
-        
-        # ရွေးချယ်ထားသော Row တစ်ခုချင်းစီ၏ Byte အရွယ်အစားကို လိုက်ပေါင်းခြင်း
-        for row in selected_rows:
-            # Row index ကို သုံးပြီး parsed_formats ထဲက သက်ဆိုင်ရာ data ကို လှမ်းယူခြင်း
-            # Filter ကြောင့် ရှုပ်ထွေးမှုမရှိစေရန် table widget item ရဲ့ custom data သို့မဟုတ် row index နဲ့ ချိတ်ဆက်တွက်ချက်ပါသည်
-            # (ဒီနေရာတွင် filter ကြောင့် row နေရာ အပြောင်းအလဲရှိနိုင်၍ table item ထဲမှ size_bytes ကို ယူခြင်းက ပိုစိတ်ချရပါသည်)
-            size_item = self.tableWidget.item(row, 4) # Column 4 သည် Size ပြသသည့်နေရာဖြစ်သည်
-            if size_item and hasattr(size_item, 'raw_bytes'):
-                total_bytes += size_item.raw_bytes
-            else:
-                # အကယ်၍ custom attribute မရှိပါက format data ထဲမှ ပြန်ရှာသည်
-                format_id_item = self.tableWidget.item(row, 0)
-                if format_id_item:
-                    f_id = format_id_item.text()
-                    for fmt in self.parsed_formats:
-                        if fmt['format_id'] == f_id:
-                            total_bytes += fmt.get('filesize_bytes', 0)
-                            break
-
-        # စုစုပေါင်း ပမာဏအား Display ပုံစံပြောင်းလဲခြင်း
-        if total_bytes >= 1024**3:
-            file_size_display = f"{total_bytes / (1024**3):.2f} GB"
-        else:
-            file_size_display = f"{total_bytes / (1024**2):.2f} MB"
-
-        # စက်ထဲက Free Space ကို စစ်ဆေးခြင်း
-        try:
-            download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
-            total, used, free = shutil.disk_usage(download_dir)
-            free_gb_display = f"{free / (1024**3):.2f} GB"
-
-            if total_bytes > free:
-                self.lbl_space_info.setText(f"⚠️ Insufficient Space! Required: {file_size_display} | Free: {free_gb_display}")
-                self.lbl_space_info.setStyleSheet("color: #ff3333; font-weight: bold;") 
-                self.btn_select.setEnabled(False) # နေရာမလောက်လျှင် ခလုတ်ပိတ်မည်
-            else:
-                self.lbl_space_info.setText(f"✅ Space Available. Total Size: {file_size_display} | Free Space: {free_gb_display}")
-                self.lbl_space_info.setStyleSheet("color: #22c55e;") 
-                self.btn_select.setEnabled(True)
-        except Exception:
-            self.lbl_space_info.setText(f"Selected Size: {file_size_display} (Could not determine disk free space.)")
-            self.btn_select.setEnabled(True)
+        self.tableWidget.blockSignals(True)
+        for row in range(self.tableWidget.rowCount()):
+            item = self.tableWidget.item(row, 0)
+            if item:
+                item.setCheckState(Qt.CheckState.Unchecked)
+        self.tableWidget.blockSignals(False)
+        self.accept()

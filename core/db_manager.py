@@ -14,7 +14,7 @@ class DatabaseManager:
         return sqlite3.connect(self.db_path)
 
     def init_db(self):
-        """Database Table မရှိသေးပါက ဆောက်ပေးခြင်း"""
+        """ Database Table မရှိသေးပါက ဆောက်ပေး """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -38,7 +38,7 @@ class DatabaseManager:
             logger.error(f"Failed to initialize database: {e}")
 
     def save_or_update_fetch(self, url: str, info: dict):
-        """Fetch Info ပြီးသွားချိန်တွင် URL နှင့် Data သိမ်းဆည်းခြင်း"""
+        """ Fetch Info ပြီးသွားချိန်မှာ URL နှင့် Data သိမ်းဆည်း """
         try:
             title = info.get("fulltitle") or info.get("title", "Unknown Title")
             uploader = info.get("uploader") or info.get("channel", "Unknown")
@@ -47,7 +47,7 @@ class DatabaseManager:
 
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                # URL ရှိပြီးသားဖြစ်ပါက Data များကို Update လုပ်မည်၊ မရှိပါက အသစ်ထည့်မည်
+                # URL ရှိပြီးသားဖြစ်ပါက Data များကို Update လုပ်မယ်၊ မရှိပါက အသစ်ထည့်
                 cursor.execute("""
                     INSERT INTO history (url, title, uploader, duration, status, created_at, updated_at)
                     VALUES (?, ?, ?, ?, 'Fetched', ?, ?)
@@ -64,7 +64,7 @@ class DatabaseManager:
             logger.error(f"DB: Error saving fetch info: {e}")
 
     def update_download_status(self, url: str, status: str, file_path: str = "", error_msg: str = ""):
-        """Download Success / Error / Cancelled ဖြစ်သွားချိန်တွင် Status Update ပြုလုပ်ခြင်း"""
+        """ Download Success / Error / Cancelled ဖြစ်သွားချိန်တွင် Status Update ပြုလုပ်ခြင်း """
         try:
             now = int(time.time())
             with self.get_connection() as conn:
@@ -78,7 +78,7 @@ class DatabaseManager:
                     WHERE url = ?
                 """, (status, file_path, error_msg, now, url))
                 
-                # အကယ်၍ Fetch မလုပ်ဘဲ Direct Download ဆွဲ၍ Database ထဲ URL မရှိသေးပါက
+                # အကယ်၍ Fetch မလုပ်ဘဲ Direct Download ဆွဲ၍ Database ထဲ URL မရှိသေးရင်
                 if cursor.rowcount == 0:
                     cursor.execute("""
                         INSERT INTO history (url, status, file_path, error_msg, created_at, updated_at)
@@ -91,7 +91,7 @@ class DatabaseManager:
             logger.error(f"DB: Error updating download status: {e}")
 
     def get_all_history(self):
-        """History စာရင်းအပြည့်အစုံ ရယူရန် (UI မှာ ပြသရန်)"""
+        """ History စာရင်းအပြည့်အစုံ ရယူရန် (UI မှာ ပြသရန်အတွက်) """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -102,7 +102,7 @@ class DatabaseManager:
             return []
 
     def delete_history_by_url(self, url: str):
-        """URL တစ်ခုချင်းစီကို Database မှ ဖျက်ခြင်း"""
+        """ URL တစ်ခုချင်းစီကို Database မှ ဖျက် """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -113,7 +113,7 @@ class DatabaseManager:
             logger.error(f"DB: Error deleting item: {e}")
 
     def clear_all_history(self):
-        """History အားလုံးကို Database မှ ဖျက်ခြင်း"""
+        """ History အားလုံးကို Database မှ ဖျက် """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()

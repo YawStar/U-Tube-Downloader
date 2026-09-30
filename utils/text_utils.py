@@ -5,7 +5,7 @@
 Video Description ထဲက URL များကို clickable hyperlink အဖြစ်
 ပြောင်းပေးသည်။ main.py ရဲ့ display_video_info() နဲ့
 on_download_finished() နှစ်ခုလုံးမှာ ထပ်ခါတလဲလဲ ရေးနေရတဲ့
-logic ကို စုစည်းထားသည်။
+logic များ
 """
 import re
 import html as html_module

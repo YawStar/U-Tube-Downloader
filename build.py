@@ -3,11 +3,13 @@ import subprocess
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
-RELEASED_DIR = BASE_DIR / "dist"
 MAIN_SCRIPT = BASE_DIR / "main.py"
 UI_FILE = BASE_DIR / "ui" / "settings_dialog.ui"
 
 IS_WINDOWS = platform.system() == "Windows"
+
+# OS ပေါ်မူတည်၍ Output Folder ခွဲခြားခြင်း (dist/Windows သို့မဟုတ် dist/Linux)
+RELEASED_DIR = BASE_DIR / "dist" / ("Windows" if IS_WINDOWS else "Linux")
 
 # OS အပေါ်မူတည်ပြီး Path ခွဲခြားတဲ့ သင်္ကေတ သတ်မှတ်ခြင်း (Windows တွင် ';' ၊ Linux တွင် ':')
 path_sep = ";" if IS_WINDOWS else ":"
@@ -19,6 +21,7 @@ args = [
     "--noupx",                          # UPX (compress) ကို မသုံးရန်
     "--onedir",                         # Output ကို Folder တစ်ခုတည်းအဖြစ် (DLLs နဲ့ Assets တွဲလျက်) ထုတ်ပေးရန်
     "--windowed",                       # GUI Application ဖြစ်၍ App ပွင့်လာလျှင် Console/Terminal Window မပြရန်
+    f"--distpath={RELEASED_DIR}",       # Output ထွက်မည့် Folder လမ်းကြောင်း သတ်မှတ်ရန်
     "--collect-all=desktop_notifier",   # desktop_notifier library ရဲ့ လိုအပ်သမျှ Module, Data, Binary အားလုံးကို တစ်ပါတည်း စုစည်းထည့်သွင်းရန်
     f"--add-data={UI_FILE}{path_sep}ui",# .ui ဖိုင်ကို output folder ထဲရှိ "ui" folder အတွင်းသို့ ထည့်သွင်းပေးရန်
     str(MAIN_SCRIPT),                   # Build လုပ်မည့် ပင်မ Python script ဖိုင်
@@ -26,8 +29,8 @@ args = [
 
 # Windows အတွက် သီးသန့် Arguments များ
 if IS_WINDOWS:
-    ICON_PATH = RELEASED_DIR / "app_icon.ico"
-    VERSION_FILE = RELEASED_DIR / "version-file.txt"
+    ICON_PATH = BASE_DIR / "dist" / "app_icon.ico"
+    VERSION_FILE = BASE_DIR / "dist" / "version-file.txt"
     
     args.extend([
         f"--icon={ICON_PATH}",                # App ၏ Icon (.ico) လမ်းကြောင်း သတ်မှတ်ရန်

@@ -2,9 +2,9 @@
 """
 File Opener Service
 
-OS default file manager ကို အသုံးပြုပြီး folder/file ဖွင့်ပေးသည်။
+OS default file manager ကို အသုံးပြုပြီး folder/file ဖွင့်ပေး
 
-main.py ထဲက ဒီ logic တွေကို စုစည်းထားသည်:
+main.py ထဲက ဒီ logic များ:
     • open_downloaded_folder() — Windows COM + macOS + Linux
 
 Features:
@@ -18,7 +18,7 @@ import subprocess
 
 
 class FileOpenerService:
-    """OS file manager ဖြင့် folder/file ဖွင့်ပေးသည်။"""
+    """ OS file manager ဖြင့် folder/file ဖွင့်ပေးမယ် """
 
     # ------------------------------------------------------------------
     # Open folder only
@@ -26,14 +26,14 @@ class FileOpenerService:
     @staticmethod
     def open_folder(folder_path: str) -> bool:
         """
-        Folder ကို OS default file manager ဖြင့် ဖွင့်သည်။
+        Folder ကို OS default file manager နဲ့ဖွင့်
 
         Args:
             folder_path: ဖွင့်လိုသော folder path
 
         Returns:
-            True — ဖွင့်အောင်မြင်ပြီ
-            False — path မရှိ / error
+            True — ဖွင့်တာအောင်မြင်
+            False — path မရှိ / error ဖြစ်
         """
         if not folder_path:
             return False
@@ -65,7 +65,7 @@ class FileOpenerService:
     @staticmethod
     def open_folder_and_select_file(file_path: str) -> bool:
         """
-        File တည်ရှိရာ folder ကို ဖွင့်ပြီး file ကို highlight လုပ်သည်။
+        File တည်ရှိရာ folder ကို ဖွင့်ပြီး file ကို highlight လုပ်မယ်
 
         Windows: Shell.Application COM ဖြင့် ရှိပြီးသား Explorer
                  ထဲမှာ file ကို select (အသစ်မပွင့်)
@@ -76,8 +76,8 @@ class FileOpenerService:
             file_path: highlight လုပ်လိုသော file path
 
         Returns:
-            True — အောင်မြင်ပြီ
-            False — error
+            True — အောင်မြင်
+            False — error ဖြစ်
         """
         if not file_path or not os.path.exists(file_path):
             return False
@@ -148,7 +148,7 @@ class FileOpenerService:
     def _open_on_windows(full_file_path: str, target_folder: str) -> bool:
         """
         Windows Explorer ကို ရှိပြီးသား window ထဲမှာ file highlight
-        လုပ်ရန် ကြိုးစားသည်။ မရရင် explorer /select ဖြင့် အသစ်ဖွင့်။
+        လုပ်ရန် ကြိုးစား။ မရရင် explorer /select နဲ့ အသစ်ဖွင့်။
 
         main.py ရဲ့ open_downloaded_folder() logic ကို ကွက်တိ ကူးထားသည်။
         """

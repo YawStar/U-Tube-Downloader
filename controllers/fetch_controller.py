@@ -2,15 +2,15 @@
 """
 Fetch Controller
 
-yt-dlp --dump-json ကို QProcess ဖြင့် run ပြီး Video Info ကို ရယူသည်။
+yt-dlp --dump-json ကို QProcess နဲ့ run ပြီး Video Info ကိုရယူ
 
-main.py ထဲက ဒီ logic တွေကို စုစည်းထားသည်:
+main.py ထဲက ဒီ logic တွေများ:
     • on_get_info_clicked() — process start
     • read_info_output() — stdout buffer
     • read_info_error() — stderr + cookies error detection
     • on_info_finished() — JSON parse + final result
 
-View ကို signals ဖြင့် notify လုပ်သည်:
+View ကို signals ဖြင့် notify လုပ်:
 
     fetch_started           — UI state ပြောင်းရန်
     fetch_output_received   — log buffer အတွက် (optional)
@@ -27,7 +27,7 @@ from utils.process_utils import kill_process_tree
 
 
 class FetchController(QObject):
-    """yt-dlp fetch info process ကို စီမံသည်။"""
+    """ yt-dlp fetch info process ကို စီမံ """
 
     # ------------------------------------------------------------------
     # Signals
@@ -63,12 +63,12 @@ class FetchController(QObject):
     # Public API
     # ------------------------------------------------------------------
     def is_running(self) -> bool:
-        """Process လုပ်နေဆဲလား"""
+        """ Process လုပ်နေတုန်းလားစစ် """
         return self.process.state() == QProcess.ProcessState.Running
 
     def start(self, url: str, settings: dict) -> None:
         """
-        Fetch info စတင်သည်။
+        Fetch info စတင်
 
         Args:
             url: video URL
@@ -83,7 +83,7 @@ class FetchController(QObject):
         self._cancelled = False
         self._cookies_error_detected = False
 
-        # Args ဆောက်
+        # Args တည်ဆောက်
         args = self.yt_dlp_service.build_info_args(url, settings)
         yt_dlp_path = self.yt_dlp_service.yt_dlp_path
 
@@ -94,16 +94,16 @@ class FetchController(QObject):
         self.process.start(yt_dlp_path, args)
 
     def cancel(self) -> None:
-        """User က Stop Fetching နှိပ်လိုက်"""
+        """ User က Stop Fetching ကို နှိပ်လိုက်ရင် """
         if not self.is_running():
             return
 
         self._cancelled = True
         kill_process_tree(self.process)
-        # _on_finished မှ fetch_cancelled emit လုပ်မည်
+        # _on_finished မှ fetch_cancelled emit လုပ်
 
     def get_error_output(self) -> str:
-        """လက်ရှိ stderr buffer ကို ပြန်ပေး (View က error ပြရန်)"""
+        """ လက်ရှိ stderr buffer ကို ပြန်ပေး (View က error ပြရန်) """
         return self._stderr_buffer
 
     # ------------------------------------------------------------------
@@ -133,7 +133,7 @@ class FetchController(QObject):
         self._stderr_buffer += error_data
         error_lower = error_data.lower()
 
-        # Cookies error keywords (main.py နဲ့ ကွက်တိတူ)
+        # Cookies error keywords
         error_keywords = [
             "confirm you're not a bot",
             "sign in to confirm you're not a bot",
@@ -183,6 +183,24 @@ class FetchController(QObject):
 
         try:
             info = json.loads(full_json)
+
+            # Best High-Res Thumbnail ရွေးချယ်
+            thumbnails = info.get("thumbnails", [])
+            if thumbnails:
+                valid_thumbs = [t for t in thumbnails if t.get("url")]
+                if valid_thumbs:
+                    best_thumb = max(
+                        valid_thumbs,
+                        key=lambda x: (x.get("preference", 0) or 0, x.get("width", 0) or 0),
+                    )
+                    best_url = best_thumb.get("url")
+                    if best_url:
+                        info["thumbnail"] = best_url
+
+            video_id = info.get("id")
+            if not info.get("thumbnail") and video_id:
+                info["thumbnail"] = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
         except json.JSONDecodeError as e:
             self.fetch_failed.emit(
                 "Error parsing video information: " + str(e)

@@ -2,8 +2,7 @@
 """
 Application Constants
 
-Magic strings များကို စုစည်းထားသည်။
-ဒါကြောင့် နေရာတစ်ခုတည်းမှာ ပြင်လို့ရသည်။
+တစ်နေရာတည်းမှာ ပြင်လို့ရအောင် Magic strings များစု
 
 Categories:
     • Download stages (yt-dlp output markers)
@@ -17,7 +16,7 @@ Categories:
 # yt-dlp Output Markers
 # =========================================================================
 class YtDlpMarker:
-    """yt-dlp stdout/stderr ထဲက marker strings များ။"""
+    """ yt-dlp stdout/stderr ထဲက marker strings များ """
 
     DOWNLOAD = "[download]"
     DESTINATION = "[download] Destination:"
@@ -41,7 +40,7 @@ class YtDlpMarker:
 # Notification Messages
 # =========================================================================
 class NotifyMsg:
-    """Notification title/message strings များ။"""
+    """ Notification title/message strings များ """
 
     FETCH_TITLE = "Fetching Completed!"
     DOWNLOAD_STARTED_TITLE = "Download Started."
@@ -54,7 +53,7 @@ class NotifyMsg:
 # UI State Names (set_controls_status method)
 # =========================================================================
 class UiState:
-    """set_controls_status() အတွက် state names။"""
+    """ set_controls_status() အတွက် state names """
 
     DOWNLOADING = "downloading"
     FETCHING = "fetching"
@@ -67,7 +66,7 @@ class UiState:
 # Icon Names (TaskbarService)
 # =========================================================================
 class IconName:
-    """TaskbarService အတွက် icon names။"""
+    """ TaskbarService အတွက် icon names """
 
     WAITING = "waiting"
     DOWNLOADING = "downloading"
@@ -79,7 +78,7 @@ class IconName:
 # Statusbar Messages
 # =========================================================================
 class StatusMsg:
-    """Statusbar မှာ ပြသတဲ့ message strings များ။"""
+    """ Statusbar မှာ ပြသတဲ့ message strings များ """
 
     READY = "Ready..."
     FETCHING = "Fetching video information..."
@@ -97,7 +96,7 @@ class StatusMsg:
 # Config Keys (frequently used)
 # =========================================================================
 class ConfigKey:
-    """Config settings keys — frequently used။"""
+    """ Config settings keys — frequently used """
 
     LAST_ADDED_URL = "last_added_url"
     DOWNLOAD_PATH = "download_path"
@@ -111,6 +110,7 @@ class ConfigKey:
     EMBED_CHAPTERS = "embed_chapters"
     EMBED_METADATA = "embed_metadata"
     USE_MTIME = "use_mtime"
+    SKIP_SPONSORS_BLOCK = "skip_sponsors_block"
     NOTIFY_FETCHED = "notify_fetched"
     NOTIFY_DOWNLOAD_STARTED = "notify_download_started"
     NOTIFY_DOWNLOAD_COMPLETED = "notify_download_completed"
@@ -124,7 +124,7 @@ class ConfigKey:
 # Resource Paths
 # =========================================================================
 class ResourcePath:
-    """Qt resource paths များ။"""
+    """ Qt resource paths များ """
 
     APP_ICON = ":/icons/icons/app_icon.ico"
     WAITING_ICON = ":/icons/icons/waiting.ico"
@@ -140,7 +140,7 @@ class ResourcePath:
 # Timing Constants
 # =========================================================================
 class Timing:
-    """Timing constants (milliseconds)။"""
+    """ Timing constants (milliseconds) """
 
     TIPS_INTERVAL_MS = 5000              # 5 seconds
     THUMBNAIL_TIMEOUT_MS = 10000         # 10 seconds

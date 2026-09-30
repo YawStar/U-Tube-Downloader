@@ -2,7 +2,7 @@
 """
 Logging setup
 
-print() အစား logging module ကို အသုံးပြုရန် setup လုပ်ပေးသည်။
+print() အစား logging module ကို အသုံးပြုရန် setup လုပ်ပေး
 
 Features:
     • Console output (stdout)
@@ -32,7 +32,7 @@ def setup_logging(
     backup_count: int = 3,
 ) -> None:
     """
-    Global logging setup — app တစ်ခုလုံးအတွက် တစ်ကြိမ်သာ ခေါ်ရမည်။
+    Global logging setup — app တစ်ခုလုံးအတွက် တစ်ကြိမ်သာ ခေါ်ရမယ်
 
     Args:
         log_file: log file path (None ဖြစ်ပါက console သာ)
@@ -80,10 +80,10 @@ def setup_logging(
 
 def get_logger(name: str) -> logging.Logger:
     """
-    Module-specific logger ရယူသည်။
+    Module-specific logger ရယူ
 
     Args:
-        name: module name (__name__ ကို ပေးပါ)
+        name: module name (__name__)
 
     Returns:
         logging.Logger instance

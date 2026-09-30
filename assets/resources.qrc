@@ -16,10 +16,12 @@
     <file>icons/waiting.ico</file>
   </qresource>
   <qresource prefix="images">
+    <file>images/app_icon.png</file>
     <file>images/about.svg</file>
     <file>images/bug_report.svg</file>
     <file>images/chapters.svg</file>
     <file>images/default_thumbnail.jpg</file>
+    <file>images/facebook.svg</file>
     <file>images/download.svg</file>
     <file>images/fetch_Info.svg</file>
     <file>images/formats.svg</file>
@@ -29,8 +31,8 @@
     <file>images/heart.svg</file>
     <file>images/heart_pink.svg</file>
     <file>images/license.svg</file>
-    <file>images/loading.gif</file>
     <file>images/m_time.svg</file>
+    <file>images/skip_sponsors.svg</file>
     <file>images/mail.svg</file>
     <file>images/metadata.svg</file>
     <file>images/open_folder.svg</file>
