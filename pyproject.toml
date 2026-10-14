@@ -8,6 +8,7 @@ dependencies = [
     "desktop-notifier>=6.2.0",
     "niquests>=3.21.1",
     "psutil>=7.2.2",
+    "pymediainfo>=7.0.1",
     "pyside6>=6.11.2",
     "pywin32>=312; sys_platform == 'win32'",
     "requests>=2.34.2",

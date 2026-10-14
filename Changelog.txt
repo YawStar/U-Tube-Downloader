@@ -1,3 +1,14 @@
+version 1.0.0.31
+{+} Background Blur Effect ထည့်သွင်း
+{^} History Dialog Logic ကို ပြင်ဆင် (Completed, Fetched, Error တို့ကိုအရောင်ပြောင်း)
+{+} Privacy Mode ထည့်သွင်း
+{*} App Close Event Bugs ကို ပြင်ဆင်
+{+} File Drag & Drop Info Feature ထည့်သွင်း
+{*} Thumbnail fetching bug ကို ပြင်ဆင်
+{+} Shortcut Key များ ထည့်သွင်း
+{+} Quick Download Dir ရွေးချယ်နိုင်
+{+} Playlist ကို Download လုပ်နိုင်
+
 version 1.0.0.30
 {*} QTrayNotification မှ desktop_notifier သို့ပြောင်းလဲ
 {+} Update Checking feature ကို ထည့်သွင်း
@@ -34,11 +45,11 @@ version 1.0.0.28
 {+} About window ကို ထည့်သွင်း
 
 version 1.0.0.27
-{*} Download လုပ်တဲ့အခါ log ပြသ
+{+} Download လုပ်တဲ့အခါ log ပြသ
 {^} preferences_dialog က cookies ကို အဆင့်မြှင့်
 {+} Preferences_dialog က cookies မှာ inputbox နဲ့ button တွေ ထပ်တိုး
-{*} Download Args မှာ Title က စာလုံး 50 ထက်ပိုမယူအောင် လုပ်
-{*} Cookies Type တွေ (None, File, Manual, Browser) တို့ကို Logic တွေထည့်သွင်း
+{^} Download Args မှာ Title က စာလုံး 50 ထက်ပိုမယူအောင် လုပ်
+{+} Cookies Type တွေ (None, File, Manual, Browser) တို့ကို Logic တွေထည့်သွင်း
 
 version 1.0.0.26
 {+} Download လုပ်နေတုန်း Close လုပ်ရင် Config ကိုကြည့်ပြီး Tray ကို အလုပ်လုပ်

@@ -28,7 +28,7 @@ class ClipboardMonitor(QObject):
             'bbc.com', 'edition.cnn.com', 'ted.com',
             'pornhub.com', 'xvideos.com', 'xnxx.com', 'xhamster.com',
             'eporner.com', 'youporn.com', 'redtube.com', 'tnaflix.com',
-            'pornhat.com'
+            'pornhat.com', 'pornsub.cc'
         ]
 
     def start(self):

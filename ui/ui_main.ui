@@ -624,6 +624,28 @@ QPushButton:checked {
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="changeModeButton">
+        <property name="maximumSize">
+         <size>
+          <width>28</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>PushButton</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>28</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
@@ -635,6 +657,32 @@ QPushButton:checked {
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblDowloadDir">
+        <property name="text">
+         <string>Download Dir</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="downloadDirCombo">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>

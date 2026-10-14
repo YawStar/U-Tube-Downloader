@@ -82,6 +82,7 @@ class StatusMsg:
 
     READY = "Ready..."
     FETCHING = "Fetching video information..."
+    FETCHING_PLAYLIST = "Fetching playlist information..."
     CANCELLING_FETCH = "Cancelling fetch..."
     FETCH_CANCELLED = "Fetching cancelled by user."
     FETCH_FAILED = "Failed to fetch video information."
@@ -98,6 +99,7 @@ class StatusMsg:
 class ConfigKey:
     """ Config settings keys — frequently used """
 
+    IS_PRIVACY = "privacy_mode"
     LAST_ADDED_URL = "last_added_url"
     DOWNLOAD_PATH = "download_path"
     AWAKE_MODE = "awake_mode"
@@ -132,7 +134,9 @@ class ResourcePath:
     ERROR_ICON = ":/icons/icons/error.ico"
     COMPLETED_ICON = ":/icons/icons/completed.ico"
 
-    DEFAULT_THUMBNAIL = ":/images/images/default_thumbnail.jpg"
+    DEFAULT_THUMBNAIL = ":/images/images/default_thumbnail.png"
+    PRIVACY_THUMBNAIL = ":/images/images/privacy_thumbnail.png"
+    UNAVAILABLE_THUMBNAIL = ":/images/images/unavailable_thumbnail.png"
     LOADING_GIF = ":/images/images/loading.gif"
 
 

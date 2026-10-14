@@ -1,13 +1,24 @@
+import json
 
 from PySide6.QtWidgets import (
     QDialog, QHBoxLayout, QVBoxLayout, 
     QLabel, QPushButton, QFrame, QMessageBox
 )
-from PySide6.QtCore import Qt, QSize, QUrl
+from PySide6.QtCore import QThread, Qt, QSize, QUrl, Signal
 from PySide6.QtGui import QCursor, QPixmap, QIcon, QDesktopServices
+import urllib.request
 
 # CONSTANTS
 import core.global_constants as CONST
+
+# Modern Update Dialog
+from ui.update_dialog import ModernUpdateDialog
+
+# Logger
+from utils.logger import setup_logging, get_logger
+
+# Module logger
+logger = get_logger(__name__)
 
 class ActionCard(QFrame):
     """ညာဘက်ခြမ်းရှိ Icon Image, Title, Subtitle ပါသော Card များအတွက် Widget"""
@@ -74,6 +85,56 @@ class ActionCard(QFrame):
                 QDesktopServices.openUrl(QUrl(self.url))
         super().mousePressEvent(event)
 
+# ============================================================================
+# Direct Update Checker Thread
+# ============================================================================
+class DirectUpdateCheckerThread(QThread):
+    update_checked = Signal(bool, str, str, str)
+    check_failed = Signal(str)
+
+    def __init__(self, current_version: str, parent=None):
+        super().__init__(parent)
+        self.current_version = current_version.lstrip('v')
+        self.api_url = "https://api.github.com/repos/YawStar/U-Tube-Downloader/releases/latest"
+
+    def run(self):
+        try:
+            req = urllib.request.Request(
+                self.api_url,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode('utf-8'))
+                    latest_version = data.get("tag_name", "0.0.0").lstrip('v')
+                    release_notes = data.get("body", "No release notes available.")
+                    html_url = data.get("html_url", "https://github.com/YawStar/U-Tube-Downloader/releases")
+
+                    download_url = html_url
+                    assets = data.get("assets", [])
+                    for asset in assets:
+                        asset_name = asset.get("name", "").lower()
+                        if asset_name.endswith(".exe"):
+                            download_url = asset.get("browser_download_url", html_url)
+                            break
+
+                    is_available = self._is_newer(self.current_version, latest_version)
+                    self.update_checked.emit(is_available, latest_version, release_notes, download_url)
+                else:
+                    self.check_failed.emit(f"GitHub API Error: HTTP {response.status}")
+        except Exception as e:
+            self.check_failed.emit(str(e))
+
+    def _is_newer(self, current: str, latest: str) -> bool:
+        try:
+            c = [int(x) for x in current.split('.')]
+            l = [int(x) for x in latest.split('.')]
+            return l > c
+        except ValueError:
+            return latest > current
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
@@ -146,7 +207,7 @@ class AboutDialog(QDialog):
         donate_btn = QPushButton(" Donate")
         donate_btn.setIcon(QIcon(":/images/images/heart_pink.svg"))
         donate_btn.setCursor(QCursor(Qt.PointingHandCursor))
-        donate_btn.setFixedSize(140, 32)
+        donate_btn.setFixedSize(130, 32)
         donate_btn.setToolTip("Support the development of this project")
         donate_btn.setStyleSheet("""
             QPushButton {
@@ -165,13 +226,42 @@ class AboutDialog(QDialog):
 
         donate_btn.clicked.connect(self.open_donate_link)
 
+        self.check_update_btn = QPushButton("Check update")
+        # self.check_update_btn.setIcon(QIcon(":/images/images/heart_pink.svg"))
+        self.check_update_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.check_update_btn.setFixedSize(130, 32)
+        self.check_update_btn.setToolTip("Check for Update...")
+        self.check_update_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 190, 255, 0.1);
+                color: #FFFFFF;
+                border: 1px solid rgba(60, 190, 255, 0.3);
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 255, 255, 0.2);
+                border: 1px solid #00FFFF;
+            }
+        """)
+
+        self.check_update_btn.clicked.connect(self.on_check_update_clicked)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(8)
+        btn_layout.addStretch()
+        btn_layout.addWidget(donate_btn)
+        btn_layout.addWidget(self.check_update_btn)
+        btn_layout.addStretch()
+
         left_panel.addLayout(logo_header_layout)
         left_panel.addWidget(app_version, alignment=Qt.AlignHCenter)
         left_panel.addWidget(app_released_date, alignment=Qt.AlignHCenter)
         left_panel.addSpacing(22)
         left_panel.addWidget(dev_label, alignment=Qt.AlignHCenter)
         left_panel.addSpacing(3)
-        left_panel.addWidget(donate_btn, alignment=Qt.AlignHCenter)
+        left_panel.addLayout(btn_layout)
         left_panel.addStretch()
 
         # ==================== 2. ညာဘက် Panel ====================
@@ -251,6 +341,45 @@ class AboutDialog(QDialog):
     def show_about_qt(self):
         """ Qt Framework အကြောင်း MessageBox ပေါ်စေမည့် Method """
         QMessageBox.aboutQt(self, "About Qt")
+
+    def on_check_update_clicked(self):
+        self.check_update_btn.setEnabled(False)
+        self.check_update_btn.setText("Checking...")
+        logger.info("Checking for application updates...")
+
+        current_ver = CONST.APP_VERSION
+
+        self.update_thread = DirectUpdateCheckerThread(current_version=current_ver, parent=self)
+        self.update_thread.update_checked.connect(self.on_update_check_finished)
+        self.update_thread.check_failed.connect(self.on_update_check_failed)
+        self.update_thread.start()
+
+    def on_update_check_finished(self, is_available: bool, latest_ver: str, notes: str, download_url: str):
+        self.check_update_btn.setEnabled(True)
+        self.check_update_btn.setText("Check update")
+
+        current_ver = CONST.APP_VERSION
+
+        if is_available:
+            dialog = ModernUpdateDialog(
+                current_ver=current_ver,
+                latest_ver=latest_ver,
+                release_notes=notes,
+                download_url=download_url,
+                parent=self
+            )
+            logger.info(f"Current: {current_ver} | Latest: {latest_ver} | Update Available: {is_available}")
+            dialog.exec()
+        else:
+            logger.info("No Updates: You are using the latest version.")
+            QMessageBox.information(self, "No Updates", "You are using the latest version.")
+
+    def on_update_check_failed(self, error_msg: str):
+        self.check_update_btn.setEnabled(True)
+        self.check_update_btn.setText("Check update")
+
+        logger.error(f"Failed to check for updates: Could not check for updates:\n{error_msg}")
+        QMessageBox.warning(self, "Update Check Failed", f"Could not check for updates:\n{error_msg}\n\nမအေလိုး မင်းအောင်လှိုင်ကောင်းမှုကြောင့် GitHub Api ကိုဖတ်မရပါသဖြင့် VPN သုံးပြီး ပြန်စစ်ပါ..")
 
     def open_donate_link(self):
         """ Donate ခလုတ်နှိပ်ပါက ပွင့်မည့် Link """

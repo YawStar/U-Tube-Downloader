@@ -20,7 +20,8 @@
     <file>images/about.svg</file>
     <file>images/bug_report.svg</file>
     <file>images/chapters.svg</file>
-    <file>images/default_thumbnail.jpg</file>
+    <file>images/default_thumbnail.png</file>
+    <file>images/privacy_thumbnail.png</file>
     <file>images/facebook.svg</file>
     <file>images/download.svg</file>
     <file>images/fetch_Info.svg</file>
@@ -39,8 +40,10 @@
     <file>images/paste.svg</file>
     <file>images/qt_dark.svg</file>
     <file>images/settings.svg</file>
+    <file>images/shield.svg</file>
     <file>images/subtitles.svg</file>
     <file>images/thumbnail.svg</file>
     <file>images/translate.svg</file>
+    <file>images/unavailable_thumbnail.png</file>
   </qresource>
 </RCC>

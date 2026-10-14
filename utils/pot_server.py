@@ -65,7 +65,7 @@ def _hide_console_window(process: QProcess):
 # ============================================================================
 # Helper: Kill process on port (cross-platform)
 # ============================================================================
-def _kill_process_on_port(port: int = 4416) -> bool:
+def _kill_process_on_port(port: int = 8080) -> bool:
     try:
         target_pids = set()
 
@@ -159,145 +159,7 @@ def _kill_process_on_port(port: int = 4416) -> bool:
 
 
 # ============================================================================
-# 1. POT Module Downloader
-# ============================================================================
-class POTModuleDownloader(QObject):
-    progress_signal = Signal(str)
-    finished_signal = Signal(bool, str)
-
-    def __init__(self, deno_exe: str, server_dir: str, parent=None):
-        super().__init__(parent)
-        self.deno_exe = deno_exe
-        self.server_dir = server_dir
-        ensure_executable(self.deno_exe)
-
-        self._process: QProcess | None = None
-        self._finished_emitted = False
-
-    def start(self):
-        if not os.path.exists(self.deno_exe):
-            self._safe_finish(False, "Deno executable not found.")
-            return
-
-        if not os.path.exists(self.server_dir):
-            self._safe_finish(False, "POT Server directory not found.")
-            return
-
-        self.progress_signal.emit("Downloading and caching Deno dependencies...")
-
-        main_ts_path = os.path.join(self.server_dir, "src", "main.ts")
-
-        if (os.path.exists(os.path.join(self.server_dir, "deno.json"))
-                or os.path.exists(os.path.join(self.server_dir, "deno.jsonc"))):
-            args = ["install"]
-        elif os.path.exists(main_ts_path):
-            args = ["cache", "src/main.ts"]
-        else:
-            args = ["install"]
-
-        self._process = QProcess(self)
-        self._process.setWorkingDirectory(self.server_dir)
-        self._process.setProcessChannelMode(
-            QProcess.ProcessChannelMode.MergedChannels
-        )
-        self._process.readyReadStandardOutput.connect(self._on_output)
-        self._process.finished.connect(self._on_finished)
-        self._process.errorOccurred.connect(self._on_error)
-
-        _hide_console_window(self._process)
-
-        self._process.start(self.deno_exe, args)
-
-        if not self._process.waitForStarted(3000):
-            self._safe_finish(
-                False,
-                f"Failed to start Deno: {self._process.errorString()}"
-            )
-
-    def _safe_finish(self, success: bool, message: str):
-        if self._finished_emitted:
-            return
-        self._finished_emitted = True
-        self.finished_signal.emit(success, message)
-
-    @Slot()
-    def _on_output(self):
-        if not self._process:
-            return
-        try:
-            data = bytes(self._process.readAllStandardOutput()).decode(
-                "utf-8", errors="replace"
-            )
-            for line in data.splitlines():
-                line = line.strip()
-                if line:
-                    self.progress_signal.emit(line)
-        except Exception as e:
-            logger.error(f"Error reading module downloader output: {e}")
-
-    @Slot(int, QProcess.ExitStatus)
-    def _on_finished(self, exit_code, exit_status):
-        if exit_code == 0:
-            self._safe_finish(True, "POT Server modules downloaded successfully!")
-        else:
-            self._safe_finish(
-                False, f"Failed to download modules (Code: {exit_code})"
-            )
-
-    @Slot(QProcess.ProcessError)
-    def _on_error(self, error):
-        self._safe_finish(False, f"Process error: {error}")
-
-    def stop(self):
-        if (self._process
-                and self._process.state() != QProcess.ProcessState.NotRunning):
-            self._process.terminate()
-            if not self._process.waitForFinished(2000):
-                self._process.kill()
-                self._process.waitForFinished(1000)
-
-    @classmethod
-    def check_modules(cls, deno_exe: str, server_dir: str) -> tuple[bool, str]:
-        ensure_executable(deno_exe)
-
-        if not os.path.exists(deno_exe):
-            return False, "Deno executable not found."
-        if not os.path.exists(server_dir):
-            return False, "POT Server directory not found."
-
-        main_ts_path = os.path.join(server_dir, "src", "main.ts")
-        if not os.path.exists(main_ts_path):
-            return False, "src/main.ts file not found."
-
-        p = QProcess()
-        p.setWorkingDirectory(server_dir)
-        p.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
-
-        _hide_console_window(p)
-
-        p.start(deno_exe, ["check", "src/main.ts"])
-
-        if not p.waitForStarted(3000):
-            return False, f"Failed to start Deno: {p.errorString()}"
-
-        if not p.waitForFinished(60000):
-            p.kill()
-            p.waitForFinished(1000)
-            return False, "Check timed out after 60 seconds."
-
-        output = bytes(p.readAllStandardOutput()).decode(
-            "utf-8", errors="replace"
-        ).strip()
-
-        exit_code = p.exitCode()
-        if exit_code == 0:
-            return True, output if output else "All modules are intact and type-checked successfully."
-        else:
-            return False, output if output else f"Check failed with exit code {exit_code}"
-
-
-# ============================================================================
-# 2. POT Server Process — ရိုးရှင်းတဲ့ Logic (No Health Check)
+# POT Server Process — ရိုးရှင်းတဲ့ Logic (No Health Check)
 # ============================================================================
 class POTServerProcess(QObject):
     """
@@ -325,12 +187,13 @@ class POTServerProcess(QObject):
     def __init__(self, tools_dir: str, parent=None):
         super().__init__(parent)
         self.tools_dir = tools_dir
-        self.deno_exe = os.path.join(self.tools_dir, f"deno{BIN_EXT}")
-        ensure_executable(self.deno_exe)
+        self.ys_pot_server_exe = os.path.join(self.tools_dir, f"yawstar-pot-server{BIN_EXT}")
+        self.ys_pot_server = os.path.join(self.tools_dir, f"yawstar-pot-server{BIN_EXT}")
+        ensure_executable(self.ys_pot_server)
 
-        self.server_dir = os.path.join(self.tools_dir, "pot-server")
-        self.server_url = "http://127.0.0.1:4416"
-        self.server_port = 4416
+        self.server_dir = self.tools_dir # os.path.join(self.tools_dir, "pot-server")
+        self.server_url = "http://127.0.0.1:8080"
+        self.server_port = 8080
 
         self._process: QProcess | None = None
         self._stop_requested = False
@@ -346,8 +209,8 @@ class POTServerProcess(QObject):
         Server ကို စတင်။
         
         Logic:
-        1. Deno executable ရှိ/မရှိ စစ်
-        2. Server dir + main.ts ရှိ/မရှိ စစ်
+        1. ys-pot-server executable ရှိ/မရှိ စစ်
+        2. Server dir ရှိ/မရှိ စစ်
         3. QProcess စတင်
         4. waitForStarted() နဲ့ process start ဖြစ်/မဖြစ် စစ်
         5. ဖြစ်ရင် → started_signal(True) + stdout reader စ
@@ -360,11 +223,11 @@ class POTServerProcess(QObject):
 
         self.log_signal.emit("Checking server status...")
 
-        # ၁။ Deno executable ရှိ/မရှိ
-        if not os.path.exists(self.deno_exe):
+        # ၁။ ys-pot-server executable ရှိ/မရှိ
+        if not os.path.exists(self.ys_pot_server):
             self._fail_start(
                 "not_found",
-                f"Deno executable not found: {self.deno_exe}"
+                f"Deno executable not found: {self.ys_pot_server}"
             )
             return
 
@@ -375,16 +238,7 @@ class POTServerProcess(QObject):
                 f"POT Server directory not found: {self.server_dir}"
             )
             return
-
-        # ၃။ main.ts ရှိ/မရှိ
-        main_ts = os.path.join(self.server_dir, "src", "main.ts")
-        if not os.path.exists(main_ts):
-            self._fail_start(
-                "not_installed",
-                f"src/main.ts not found in {self.server_dir}"
-            )
-            return
-
+        
         # ၄။ Process စတင်
         self._launch_process()
 
@@ -460,22 +314,20 @@ class POTServerProcess(QObject):
     # ========================================================
     def _launch_process(self):
         """
-        Deno server ကို QProcess နဲ့ စတင်။
+        YawStar Pot server ကို QProcess နဲ့ စတင်။
         
         waitForStarted() က process spawn ဖြစ်/မဖြစ် စစ်တယ်။
         stdout reader ကို process start ဖြစ်မှ ချိတ်တယ်။
         """
         cmd_args = [
-            "run",
-            "--allow-net",
-            "--allow-env",
-            "--allow-read",
-            "--allow-ffi",
-            "src/main.ts",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8080",
         ]
 
-        self.log_signal.emit(f"[EXEC] {self.deno_exe} {' '.join(cmd_args)}")
-        logger.info(f"[EXEC] {self.deno_exe} {' '.join(cmd_args)}")
+        self.log_signal.emit(f"[EXEC] {self.ys_pot_server} {' '.join(cmd_args)}")
+        logger.info(f"[EXEC] {self.ys_pot_server} {' '.join(cmd_args)}")
 
         try:
             self._process = QProcess(self)
@@ -484,18 +336,6 @@ class POTServerProcess(QObject):
                 QProcess.ProcessChannelMode.MergedChannels
             )
 
-            # Environment
-            try:
-                env = QProcessEnvironment.systemEnvironment()
-                deno_dir = os.path.dirname(self.deno_exe)
-                current_path = env.value("PATH", "")
-                if deno_dir not in current_path.split(os.pathsep):
-                    env.insert("PATH", deno_dir + os.pathsep + current_path)
-                env.insert("DENO_NO_UPDATE_CHECK", "1")
-                self._process.setProcessEnvironment(env)
-            except Exception as e:
-                logger.debug(f"Could not set process env: {e}")
-
             _hide_console_window(self._process)
 
             # Process error handler — start မဖြစ်ရင် ဒီက ဖမ်း
@@ -503,17 +343,17 @@ class POTServerProcess(QObject):
             self._process.finished.connect(self._on_process_finished)
 
             # Process စတင်
-            self._process.start(self.deno_exe, cmd_args)
+            self._process.start(self.ys_pot_server, cmd_args)
 
-            # [KEY] process spawn ဖြစ်/မဖြစ် စစ် (3s စောင့်)
-            if not self._process.waitForStarted(3000):
-                err_str = self._process.errorString() or "Unknown error"
-                self._fail_start(
-                    "failed_to_start",
-                    f"Failed to start Deno process: {err_str}"
-                )
-                self._cleanup_process()
-                return
+            # # [KEY] process spawn ဖြစ်/မဖြစ် စစ် (3s စောင့်)
+            # if not self._process.waitForStarted(3000):
+            #     err_str = self._process.errorString() or "Unknown error"
+            #     self._fail_start(
+            #         "failed_to_start",
+            #         f"Failed to start yawstar-pot-server process: {err_str}"
+            #     )
+            #     self._cleanup_process()
+            #     return
 
             # [KEY] Process start ဖြစ်သွားပြီ — ဒါဆို stdout reader စ
             # (stdout ကို readyReadStandardOutput signal နဲ့ ဖတ်မယ်)
@@ -661,7 +501,7 @@ class POTServerProcess(QObject):
             return False
 
     @classmethod
-    def kill_process_on_port(cls, port: int = 4416) -> bool:
+    def kill_process_on_port(cls, port: int = 8080) -> bool:
         try:
             requests.post(f"http://127.0.0.1:{port}/shutdown", timeout=1)
             time.sleep(0.3)

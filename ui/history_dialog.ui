@@ -79,14 +79,14 @@ QPushButton#btnClearHistory:hover { background-color: #FF4E00; border: 1px solid
      <item>
       <widget class="QPushButton" name="btnClearHistory">
        <property name="text">
-        <string>Clear History</string>
+        <string>Clear All History</string>
        </property>
       </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

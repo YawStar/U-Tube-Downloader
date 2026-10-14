@@ -98,7 +98,7 @@ class Ui_HistoryDialog(object):
     def retranslateUi(self, HistoryDialog):
         HistoryDialog.setWindowTitle(QCoreApplication.translate("HistoryDialog", u"URL History", None))
         self.txtSearch.setPlaceholderText(QCoreApplication.translate("HistoryDialog", u"Search history...", None))
-        self.btnClearHistory.setText(QCoreApplication.translate("HistoryDialog", u"Clear History", None))
+        self.btnClearHistory.setText(QCoreApplication.translate("HistoryDialog", u"Clear All History", None))
         self.btnSelect.setText(QCoreApplication.translate("HistoryDialog", u"Select", None))
         self.btnCancel.setText(QCoreApplication.translate("HistoryDialog", u"Cancel", None))
     # retranslateUi

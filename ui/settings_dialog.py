@@ -26,7 +26,11 @@ QCoreApplication.setApplicationName(CONST.APP_NAME)
 
 # OS
 CURRENT_OS = platform.system()
-BIN_EXT = ".exe" if CURRENT_OS == "Windows" else ""
+IS_WINDOWS = CURRENT_OS == "Windows"
+IS_LINUX = CURRENT_OS == "Linux"
+IS_MACOS = CURRENT_OS == "Darwin"
+BIN_EXT = ".exe" if IS_WINDOWS else ""
+SVR_EXE_NAME = f"yawstar-pot-server{BIN_EXT}" if IS_WINDOWS else "yawstar-pot-server"
 
 # ============================================================================
 # AppData Paths
@@ -55,7 +59,7 @@ from utils.logger import setup_logging, get_logger
 logger = get_logger(__name__)
 
 # POT Server Services
-from utils.pot_server import POTModuleDownloader, POTServerThread
+from utils.pot_server import POTServerThread
 
 
 # ============================================================================
@@ -194,44 +198,44 @@ class FileDownloaderThread(QThread):
                         percent = int((downloaded / total_size) * 100)
                         self.progress_signal.emit(f"Downloading... {percent}%")
 
-            if self.is_zip and self.extract_to:
-                self.progress_signal.emit("Extracting server files...")
-                os.makedirs(self.extract_to, exist_ok=True)
+            # if self.is_zip and self.extract_to:
+            #     self.progress_signal.emit("Extracting server files...")
+            #     os.makedirs(self.extract_to, exist_ok=True)
 
-                with zipfile.ZipFile(self.save_path, 'r') as zip_ref:
-                    all_members = zip_ref.namelist()
+            #     with zipfile.ZipFile(self.save_path, 'r') as zip_ref:
+            #         all_members = zip_ref.namelist()
 
-                    server_prefix = None
-                    for member in all_members:
-                        if member.endswith('/server/') or member.endswith('/server'):
-                            server_prefix = member if member.endswith('/') else member + '/'
-                            break
+            #         server_prefix = None
+            #         for member in all_members:
+            #             if member.endswith('/server/') or member.endswith('/server'):
+            #                 server_prefix = member if member.endswith('/') else member + '/'
+            #                 break
 
-                    if server_prefix:
-                        for member in zip_ref.infolist():
-                            if member.filename.startswith(server_prefix) and member.filename != server_prefix:
-                                rel_path = member.filename[len(server_prefix):]
-                                if not rel_path:
-                                    continue
+            #         if server_prefix:
+            #             for member in zip_ref.infolist():
+            #                 if member.filename.startswith(server_prefix) and member.filename != server_prefix:
+            #                     rel_path = member.filename[len(server_prefix):]
+            #                     if not rel_path:
+            #                         continue
 
-                                target_path = os.path.join(self.extract_to, rel_path)
+            #                     target_path = os.path.join(self.extract_to, rel_path)
 
-                                if member.is_dir():
-                                    os.makedirs(target_path, exist_ok=True)
-                                else:
-                                    if not os.path.exists(target_path):
-                                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                                        with zip_ref.open(member) as source, open(target_path, "wb") as target:
-                                            target.write(source.read())
-                                    else:
-                                        logger.info(f"Skipped existing file: {target_path}")
-                    else:
-                        raise Exception("Could not find 'server' directory in the downloaded zip package.")
+            #                     if member.is_dir():
+            #                         os.makedirs(target_path, exist_ok=True)
+            #                     else:
+            #                         if not os.path.exists(target_path):
+            #                             os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            #                             with zip_ref.open(member) as source, open(target_path, "wb") as target:
+            #                                 target.write(source.read())
+            #                         else:
+            #                             logger.info(f"Skipped existing file: {target_path}")
+            #         else:
+            #             raise Exception("Could not find 'server' directory in the downloaded zip package.")
 
-                if os.path.exists(self.save_path):
-                    os.remove(self.save_path)
+            #     if os.path.exists(self.save_path):
+            #         os.remove(self.save_path)
 
-            self.finished_signal.emit(True, "Download and extraction completed successfully.")
+            self.finished_signal.emit(True, "Download completed successfully.")
 
         except Exception as e:
             self.finished_signal.emit(False, f"Download failed: {str(e)}")
@@ -261,12 +265,12 @@ class SettingsDialog(QDialog):
         # POT Manager — MainWindow က ပေးရင် သုံး၊ မပေးရင် အသစ်ဆောက်
         if pot_mgr is not None:
             self.pot_mgr = pot_mgr
-            logger.info("SettingsDialog: Using provided POT manager")
+            # logger.info("SettingsDialog: Using provided POT manager")
         else:
             self.pot_mgr = POTServerThread(tools_dir=TPT_DIR)
-            logger.info("SettingsDialog: Created new POT manager")
+            # logger.info("SettingsDialog: Created new POT manager")
 
-        # 1. Dynamic UI Loading
+        # Dynamic UI Loading
         loader = QUiLoader()
         ui_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings_dialog.ui")
         ui_file = QFile(ui_file_path)
@@ -328,9 +332,8 @@ class SettingsDialog(QDialog):
         self.ui.btn_toggle_pot_server.setObjectName("btn_pref_secondary")
         self.ui.btn_download_pot_server.setObjectName("btn_pref_secondary")
         self.ui.btn_download_plugin.setObjectName("btn_pref_secondary")
-        self.ui.btn_download_modules.setObjectName("btn_pref_secondary")
 
-        # 2. Dynamic Style Sheet Override
+        # Dynamic Style Sheet Override
         self.setStyleSheet("""
             QDialog {
                 background-color: #161616;
@@ -565,9 +568,6 @@ class SettingsDialog(QDialog):
 
         if hasattr(self.ui, 'btn_download_plugin'):
             self.ui.btn_download_plugin.clicked.connect(self.on_download_plugin_clicked)
-
-        if hasattr(self.ui, 'btn_download_modules'):
-            self.ui.btn_download_modules.clicked.connect(self.on_download_modules_clicked)
 
         # Load Settings Into UI
         self.load_settings_into_ui()
@@ -808,7 +808,7 @@ class SettingsDialog(QDialog):
                 f.write(cookie_data)
 
         except Exception as e:
-            print(f"❌ Cookies သိမ်းတဲ့အခါ အမှားဖြစ်သွားပါတယ်: {e}")
+            logger.error(f"❌ An error is occured while saving Cookies: {e}")
             self.show_custom_message("critical", "Error", f"Failed to save cookies data:\n{str(e)}")
 
     def load_settings_into_ui(self):
@@ -941,11 +941,14 @@ class SettingsDialog(QDialog):
         enable_pot_server = mgr.get("enable_pot_server", False)
         self.ui.chk_enable_pot_server.setChecked(bool(enable_pot_server))
 
-        self.on_enable_pot_server_update()
         self.refresh_POT_Server_Page()
+        self.refresh_POT_Server_Status()
 
     def on_browse_clicked(self):
         current_path = self.ui.inp_dowload_path.text()
+        os_downloads_path = QStandardPaths.writableLocation(QStandardPaths.DownloadLocation)
+        if current_path == "":
+            current_path = os_downloads_path
         dir_path = QFileDialog.getExistingDirectory(self, "Select Download Directory", current_path)
         if dir_path:
             self.ui.inp_dowload_path.setText(os.path.normpath(dir_path))
@@ -970,32 +973,14 @@ class SettingsDialog(QDialog):
                 getattr(self.ui, widget_name).setEnabled(is_checked)
 
     def on_enable_pot_server_update(self):
-        is_checked = self.ui.chk_enable_pot_server.isChecked()
-
-        server_installed = os.path.exists(
-            os.path.join(TPT_DIR, "pot-server", "src", "main.ts")
-        )
-        plugin_installed = os.path.exists(
-            os.path.join(TPT_DIR, "yt-dlp-plugins", "ytdlp-pot-provider.zip")
-        )
-
-        if hasattr(self.ui, 'btn_toggle_pot_server'):
-            self.ui.btn_toggle_pot_server.setEnabled(is_checked and server_installed)
-
-        if hasattr(self.ui, 'btn_download_pot_server'):
-            self.ui.btn_download_pot_server.setEnabled(is_checked and not server_installed)
-
-        if hasattr(self.ui, 'btn_download_plugin'):
-            self.ui.btn_download_plugin.setEnabled(is_checked and not plugin_installed)
-
-        if hasattr(self.ui, 'btn_download_modules'):
-            self.ui.btn_download_modules.setEnabled(is_checked)
-
-        if hasattr(self.ui, 'spin_pot_port'):
-            self.ui.spin_pot_port.setEnabled(False)
+        # is_checked = self.ui.chk_enable_pot_server.isChecked()
+        self.refresh_POT_Server_Page()
 
     def on_browse_cookies_clicked(self):
         current_path = self.ui.inp_cookies_path.text() if hasattr(self.ui, 'inp_cookies_path') else ""
+        os_downloads_path = QStandardPaths.writableLocation(QStandardPaths.DownloadLocation)
+        if current_path == "":
+            current_path = os_downloads_path
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Cookies File", current_path, "Text Files (*.txt);;All Files (*)")
         if file_path and hasattr(self.ui, 'inp_cookies_path'):
             self.ui.inp_cookies_path.setText(os.path.normpath(file_path))
@@ -1094,9 +1079,9 @@ class SettingsDialog(QDialog):
                 try:
                     os.remove(self.manual_cookies_path)
                 except Exception as e:
-                    print(f"❌ Failed to delete manual cookies file: {e}")
+                    logger.error(f"❌ Failed to delete manual cookies file: {e}")
             else:
-                print("ℹ️ Manual cookies file does not exist.")
+                logger.error("ℹ️ Manual cookies file does not exist.")
 
             if self.config_mgr.restore_defaults():
                 self.load_settings_into_ui()
@@ -1152,15 +1137,15 @@ class SettingsDialog(QDialog):
             self.ui.btn_check_update.setText("Check Now")
 
         logger.error(f"Failed to check for updates: Could not check for updates:\n{error_msg}")
-        self.show_custom_message("warning", "Update Check Failed", f"Could not check for updates:\n{error_msg}")
+        self.show_custom_message("warning", "Update Check Failed", f"Could not check for updates:\n{error_msg}\n\nမအေလိုး မင်းအောင်လှိုင်ကောင်းမှုကြောင့် GitHub Api ကိုဖတ်မရပါသဖြင့် VPN သုံးပြီး ပြန်စစ်ပါ..")
 
     def refresh_POT_Server_Page(self):
         """ POT Server status, install state, checkbox state အားလုံးကို refresh """
         is_checked = self.ui.chk_enable_pot_server.isChecked()
 
         # Server install state
-        main_ts = os.path.join(TPT_DIR, "pot-server", "src", "main.ts")
-        server_installed = os.path.exists(main_ts)
+        ys_pot_server_bin = os.path.join(TPT_DIR, SVR_EXE_NAME)
+        server_installed = os.path.exists(ys_pot_server_bin)
 
         if server_installed:
             self.ui.lbl_pot_server_info_val.setText("✅ Installed")
@@ -1170,7 +1155,7 @@ class SettingsDialog(QDialog):
             self.ui.lbl_pot_server_info_val.setStyleSheet("color: #F39C12;")
 
         # Plugin install state
-        plugin_zip = os.path.join(TPT_DIR, "yt-dlp-plugins", "ytdlp-pot-provider.zip")
+        plugin_zip = os.path.join(TPT_DIR, "yt-dlp-plugins", "yawstar-ytdlp-pot-provider.zip")
         plugin_installed = os.path.exists(plugin_zip)
 
         if plugin_installed:
@@ -1184,11 +1169,28 @@ class SettingsDialog(QDialog):
         self.ui.btn_toggle_pot_server.setEnabled(is_checked and server_installed)
         self.ui.btn_download_pot_server.setEnabled(is_checked and not server_installed)
         self.ui.btn_download_plugin.setEnabled(is_checked and not plugin_installed)
-        self.ui.btn_download_modules.setEnabled(is_checked)
         self.ui.spin_pot_port.setEnabled(False)
 
+    def refresh_POT_Server_Status(self):
+        is_pot_server_running = self.pot_mgr.is_server_running()
+
+        if is_pot_server_running:
+            if hasattr(self.ui, 'lbl_pot_server_status_val'):
+                self.ui.lbl_pot_server_status_val.setText("🟢 Running")
+                self.ui.lbl_pot_server_status_val.setStyleSheet("color: #2ECC71;")
+            if hasattr(self.ui, 'btn_toggle_pot_server'):
+                self.ui.btn_toggle_pot_server.setText("Stop Server")
+                self.ui.btn_toggle_pot_server.setEnabled(True)
+        else:
+            if hasattr(self.ui, 'lbl_pot_server_status_val'):
+                self.ui.lbl_pot_server_status_val.setText("⚫ Stopped")
+                self.ui.lbl_pot_server_status_val.setStyleSheet("color: #8B949E;")
+            if hasattr(self.ui, 'btn_toggle_pot_server'):
+                self.ui.btn_toggle_pot_server.setText("Start Server")
+                self.ui.btn_toggle_pot_server.setEnabled(True)
+
     def on_toggle_start_stop_clicked(self):
-        """ Deno ကိုသုံးပြီး POT Server ကို စတင်/ရပ်တန့် """
+        """ YawStar ytdlp POT Server ကို စတင်/ရပ်တန့် """
         is_pot_server_running = self.pot_mgr.is_server_running()
 
         self.ui.txtOutputLog.clear()
@@ -1220,15 +1222,19 @@ class SettingsDialog(QDialog):
 
             self.set_ui_busy(True, "Starting...", allow_close=True)
 
-            # [CHANGED] Signal ချိတ်တာ __init__ မှာ လုပ်ပြီးသား — ဒီမှာ ထပ်မချိတ်တော့အောင်လုပ်
-            # (output ၂ ခါ ပြခြင်း ကာကွယ်ရန်)
-
             self.pot_mgr.start()
 
     def on_download_pot_server_clicked(self):
-        url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/archive/refs/tags/2.0.0.zip"
-        pot_server_dir = os.path.join(TPT_DIR, "pot-server")
-        temp_zip_path = os.path.join(TPT_DIR, "pot_server_temp.zip")
+        if IS_WINDOWS:
+            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-windows-amd64.exe"
+        elif IS_LINUX:
+            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-linux-amd64"
+        elif IS_MACOS:
+            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-darwin-amd64"
+
+        # url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/archive/refs/tags/2.0.0.zip"
+        
+        filePath = os.path.join(TPT_DIR, SVR_EXE_NAME)
 
         self.ui.txtOutputLog.clear()
         self.set_ui_busy(True, "Downloading POT Server...", allow_close=True)
@@ -1242,8 +1248,8 @@ class SettingsDialog(QDialog):
 
         self.pot_dl_thread = FileDownloaderThread(
             url=url,
-            save_path=temp_zip_path,
-            extract_to=pot_server_dir,
+            save_path=filePath,
+            extract_to=TPT_DIR,
             is_zip=True,
             parent=self
         )
@@ -1263,6 +1269,10 @@ class SettingsDialog(QDialog):
             self.ui.btn_download_pot_server.setEnabled(True)
             self.ui.btn_download_pot_server.setText("Download Server")
 
+        if IS_LINUX or IS_MACOS:
+            if os.path.exists(os.path.join(self.target_dir, "yawstar-pot-server")): 
+                os.chmod(os.path.join(self.target_dir, "yawstar-pot-server"), 0o755)
+
         self.refresh_POT_Server_Page()
 
         if success:
@@ -1271,9 +1281,10 @@ class SettingsDialog(QDialog):
             self.append_output_log("[INFO]: POT Server dowload error.")
 
     def on_download_plugin_clicked(self):
-        url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/download/2.0.0/bgutil-ytdlp-pot-provider.zip"
+        # url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/download/2.0.0/bgutil-ytdlp-pot-provider.zip"
+        url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-ytdlp-pot-provider.zip"
         plugin_dir = os.path.join(TPT_DIR, "yt-dlp-plugins")
-        plugin_zip_path = os.path.join(plugin_dir, "ytdlp-pot-provider.zip")
+        plugin_zip_path = os.path.join(plugin_dir, "yawstar-ytdlp-pot-provider.zip")
 
         self.set_ui_busy(True, "Downloading Plugin...", allow_close=True)
         QApplication.processEvents()
@@ -1316,65 +1327,6 @@ class SettingsDialog(QDialog):
             self.append_output_log("[INFO]: Plugin dowload successful.")
         else:
             self.append_output_log("[INFO]: Plugin download error.")
-
-    def verify_pot_modules(self):
-        deno_exe = os.path.join(TPT_DIR, f"deno{BIN_EXT}")
-        server_dir = os.path.join(TPT_DIR, "pot-server")
-
-        is_ok, message = POTModuleDownloader.check_modules(deno_exe, server_dir)
-
-        if is_ok:
-            print(f"[SUCCESS] Modules Check Passed:\n{message}")
-        else:
-            print(f"[ERROR] Modules Missing or Check Failed:\n{message}")
-
-        return is_ok, message
-
-    def on_download_modules_clicked(self):
-        self.set_ui_busy(True, "Downloading Modules...", allow_close=True)
-        QApplication.processEvents()
-
-        self.ui.txtOutputLog.clear()
-
-        if hasattr(self.ui, 'btn_download_modules'):
-            self.ui.btn_download_modules.setEnabled(False)
-            self.ui.btn_download_modules.setText("Downloading...")
-            self.ui.lbl_pot_modules_val.setText("Downloading...")
-            self.ui.lbl_pot_modules_val.setStyleSheet("color: #f39c12;")
-
-        self.module_downloader = POTModuleDownloader(
-            deno_exe=os.path.join(TPT_DIR, f"deno{BIN_EXT}"),
-            server_dir=os.path.join(TPT_DIR, "pot-server")
-        )
-
-        self.module_downloader.progress_signal.connect(self.on_module_download_progress)
-        self.module_downloader.finished_signal.connect(self.on_module_download_finished)
-
-        self.module_downloader.start()
-
-    def on_module_download_progress(self, log_msg: str):
-        logger.info(f"[POT Modules]: {log_msg}")
-        self.append_output_log(f"[POT Modules]: {log_msg}")
-
-    def on_module_download_finished(self, success: bool, message: str):
-        self.set_ui_busy(False)
-
-        if hasattr(self.ui, 'btn_download_modules'):
-            self.ui.btn_download_modules.setEnabled(True)
-            self.ui.btn_download_modules.setText("Download Modules")
-
-        self.refresh_POT_Server_Page()
-
-        if success:
-            self.append_output_log("[INFO]: All modules dowloaded.")
-            self.ui.lbl_pot_modules_val.setText("Updated")
-            self.ui.lbl_pot_modules_val.setStyleSheet("color: #3674FB;")
-            self.ui.btn_download_modules.setEnabled(True)
-        else:
-            self.append_output_log("[INFO]: Modules download error.")
-            self.ui.lbl_pot_modules_val.setText("Error")
-            self.ui.lbl_pot_modules_val.setStyleSheet("color: #F23C3C;")
-            self.ui.btn_download_modules.setEnabled(True)
 
     def open_link(self, url: str):
         if url:

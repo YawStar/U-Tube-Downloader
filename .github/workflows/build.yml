@@ -1,258 +1,317 @@
-name: Build & Release Application
+# ═══════════════════════════════════════════════════════════════════════════
+# GitHub Actions Workflow - Multi-Platform Build
+# ═══════════════════════════════════════════════════════════════════════════
+# ဤ workflow သည် YawStar U-Tube Downloader ကို platform ၆ မျိုးအတွက်
+# PyInstaller ဖြင့် build လုပ်ပေးရန်ရေးထားသည်:
+#   1. Windows 11 x64
+#   2. Windows 11 arm64
+#   3. Ubuntu Linux amd64
+#   4. Ubuntu Linux arm64
+#   5. macOS amd64 (Intel)
+#   6. macOS arm64 (Apple Silicon)
+#
+# Build လုပ်ပြီးသည့်အခါ archive များကို artifact အဖြစ် upload လုပ်ပြီး
+# git tag (v*) push လုပ်သည့်အခါ GitHub Release တွင် အလိုအလျောက် attach လုပ်ပါသည် (လောလောဆယ်ပိတ်ထား)။
+# ═══════════════════════════════════════════════════════════════════════════
 
+name: Build Multi-Platform
+
+# ─── Workflow စတင်အလုပ်လုပ်မည့် Events ───
 on:
-  # push:
-    # tags:
-      # - 'v*.*.*'
-    # branches: [ "main", "master" ]
-  # pull_request:
-    # branches: [ "main", "master" ]
+#   # main branch သို့ push လုပ်သည့်အခါ run
+#   push:
+#     branches: [ main ]
+#     # v* format ဖြင့် tag push လုပ်သည့်အခါ release job ပါ run
+#     tags:
+#       - 'v*'
+
+#   # main branch သို့ Pull Request ဖွင့်သည့်အခါ run
+#   pull_request:
+#     branches: [ main ]
+
+  # GitHub UI မှ manual run လုပ်နိုင်ရန်
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Manual Version'
-        required: false
-        default: '1.0.0.29'
 
-permissions:
-  contents: write
-  packages: write
+# ─── Global Environment Variables ───
+env:
+  PYTHON_VERSION: '3.13'      # Python version (3.12+ သည် ARM64 support ကောင်း)
+  UV_VERSION: '0.5.11'        # uv package manager version
 
+# ─── Jobs ───
 jobs:
-  # ==========================================
-  # 1. SETUP & VERSIONING JOB
-  # ==========================================
-  prepare:
-    name: Prepare Build Metadata
-    runs-on: ubuntu-24.04
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      is_release: ${{ steps.get_version.outputs.is_release }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Resolve Version
-        id: get_version
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-            IS_RELEASE="true"
-          elif [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-            IS_RELEASE="false"
-          else
-            VERSION="1.0.0.29"
-            IS_RELEASE="false"
-          fi
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
-
-  # ==========================================
-  # 2. BUILD JOB (MATRIX STRATEGY)
-  # ==========================================
+  # ═════════════════════════════════════════════════════════════════════════
+  # Job 1: Build - Platform ၆ မျိုးအတွက် parallel build
+  # ═════════════════════════════════════════════════════════════════════════
   build:
-    name: Build Packages (${{ matrix.target }})
-    needs: [prepare]
-    runs-on: ubuntu-24.04
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    # ─── Matrix Strategy - Platform ၆ မျိုး သတ်မှတ်ခြင်း ───
     strategy:
+      # fail-fast: false ဆိုလျှင် platform တစ်ခု fail ဖြစ်လျှင်လည်း ကျန်တာများ ဆက်လက် run
       fail-fast: false
+
       matrix:
         include:
-          - target: deb
-            name: Debian Package
-          - target: appimage
-            name: AppImage Executable
+          # ─── Windows x64 ───
+          - name: windows-x64
+            os: windows-latest                          # Windows Server 2022 x64
+            platform: windows
+            arch: amd64
+            artifact_name: YawStar-U-Tube-Downloader-windows-x64
+            output_dir: dist/Windows                   # build.py က ဤနေရာတွင် ထုတ်သည်
+            app_folder: "YawStar U-Tube Downloader"    # PyInstaller output folder အမည်
+            executable: "YawStar U-Tube Downloader.exe"
+            archive_ext: zip
+            archive_name: YawStar-U-Tube-Downloader-windows-x64
 
+          # ─── Windows arm64 (GitHub public preview) ───
+          - name: windows-arm64
+            os: windows-11-arm                          # Windows 11 ARM64 (preview)
+            platform: windows
+            arch: arm64
+            artifact_name: YawStar-U-Tube-Downloader-windows-arm64
+            output_dir: dist/Windows
+            app_folder: "YawStar U-Tube Downloader"
+            executable: "YawStar U-Tube Downloader.exe"
+            archive_ext: zip
+            archive_name: YawStar-U-Tube-Downloader-windows-arm64
+
+          # ─── Linux amd64 ───
+          - name: linux-amd64
+            os: ubuntu-latest                           # Ubuntu 24.04 x64
+            platform: linux
+            arch: amd64
+            artifact_name: YawStar-U-Tube-Downloader-linux-amd64
+            output_dir: dist/Linux/amd64
+            app_folder: "YawStar_U-Tube_Downloader"
+            executable: "YawStar_U-Tube_Downloader"
+            archive_ext: tar.gz
+            archive_name: YawStar-U-Tube-Downloader-linux-amd64
+
+          # ─── Linux arm64 (GitHub public preview) ───
+          - name: linux-arm64
+            os: ubuntu-24.04-arm                        # Ubuntu 24.04 ARM64 (preview)
+            platform: linux
+            arch: arm64
+            artifact_name: YawStar-U-Tube-Downloader-linux-arm64
+            output_dir: dist/Linux/arm64
+            app_folder: "YawStar_U-Tube_Downloader"
+            executable: "YawStar_U-Tube_Downloader"
+            archive_ext: tar.gz
+            archive_name: YawStar-U-Tube-Downloader-linux-arm64
+
+          # ─── macOS amd64 (Intel) ───
+          - name: macos-amd64
+            os: macos-13                                # macOS 13 (Intel x64)
+            platform: darwin
+            arch: amd64
+            artifact_name: YawStar-U-Tube-Downloader-macos-amd64
+            output_dir: dist/macOS/amd64
+            app_folder: "YawStar U-Tube Downloader"
+            executable: "YawStar U-Tube Downloader"
+            archive_ext: tar.gz
+            archive_name: YawStar-U-Tube-Downloader-macos-amd64
+
+          # ─── macOS arm64 (Apple Silicon) ───
+          - name: macos-arm64
+            os: macos-14                                # macOS 14 (Apple Silicon M1)
+            platform: darwin
+            arch: arm64
+            artifact_name: YawStar-U-Tube-Downloader-macos-arm64
+            output_dir: dist/macOS/arm64
+            app_folder: "YawStar U-Tube Downloader"
+            executable: "YawStar U-Tube Downloader"
+            archive_ext: tar.gz
+            archive_name: YawStar-U-Tube-Downloader-macos-arm64
+
+    # ─── Steps (အဆင့်ဆင့် လုပ်ဆောင်ချက်များ) ───
     steps:
-      - name: Checkout repository
+      # ─────────────────────────────────────────────────────────────
+      # Step 1: Repository code ကို runner သို့ checkout လုပ်ခြင်း
+      # ─────────────────────────────────────────────────────────────
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      # ─────────────────────────────────────────────────────────────
+      # Step 2: Python install လုပ်ခြင်း (pip cache အလိုအလျောက် enable)
+      # ─────────────────────────────────────────────────────────────
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
 
+      # ─────────────────────────────────────────────────────────────
+      # Step 3: uv package manager install လုပ်ခြင်း
+      # (build.py က "uv run --with pyinstaller" ကို သုံးသောကြောင့် လိုအပ်)
+      # ─────────────────────────────────────────────────────────────
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v4
         with:
-          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true              # uv cache enable (build မြန်စေရန်)
 
-      - name: Cache AppImage Tooling
-        if: matrix.target == 'appimage'
-        uses: actions/cache@v4
-        with:
-          path: /usr/local/bin/appimagetool
-          key: appimagetool-x86_64-v1
+      # ─────────────────────────────────────────────────────────────
+      # Step 4: Runner အချက်အလက်များ ပြသခြင်း (debug အတွက်)
+      # ─────────────────────────────────────────────────────────────
+      - name: Display runner info
+        shell: bash
+        run: |
+          echo "=== Runner Info ==="
+          echo "OS: ${{ runner.os }}"
+          echo "Arch: ${{ runner.arch }}"
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Target arch: ${{ matrix.arch }}"
+          echo "=== Tools ==="
+          python --version
+          uv --version
+          echo "=== Python platform ==="
+          python -c "import platform; print('machine:', platform.machine()); print('system:', platform.system())"
 
-      - name: Install System Dependencies
+      # ─────────────────────────────────────────────────────────────
+      # Step 5: Linux system dependencies install လုပ်ခြင်း
+      # (PySide6/Qt GUI app များအတွက် GTK, NSS, X11 libraries လိုအပ်)
+      # ─────────────────────────────────────────────────────────────
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y upx dpkg-dev wget
-          
-          if [ "${{ matrix.target }}" = "appimage" ] && [ ! -f /usr/local/bin/appimagetool ]; then
-            wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-            chmod +x appimagetool
-            sudo mv appimagetool /usr/local/bin/
-          fi
+          sudo apt-get install -y \
+            libgtk-3-0 \
+            libnotify4 \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils \
+            libatspi2.0-0 \
+            libayatana-appindicator3-1 \
+            libgirepository1.0-dev \
+            libcairo2-dev \
+            pkg-config \
+            python3-dev \
+            gir1.2-gtk-3.0
 
-      - name: Install Python Dependencies & Build Application
+      # ─────────────────────────────────────────────────────────────
+      # Step 6: လိုအပ်သော ဖိုင်များ ရှိ/မရှိ စစ်ဆေးခြင်း
+      # ─────────────────────────────────────────────────────────────
+      - name: Verify required files exist
+        shell: bash
         run: |
-          uv sync
-          uv run python build.py
+          echo "Checking required files..."
+          test -f main.py || { echo "❌ main.py not found"; exit 1; }
+          test -f ui/settings_dialog.ui || { echo "❌ ui/settings_dialog.ui not found"; exit 1; }
+          test -f build.py || { echo "❌ build.py not found"; exit 1; }
+          echo "✅ All required files present"
+          echo "Project structure:"
+          ls -la
 
-      # --- BUILD .DEB PACKAGE ---
-      - name: Build .deb Package
-        if: matrix.target == 'deb'
-        env:
-          APP_VERSION: ${{ needs.prepare.outputs.version }}
+      # ─────────────────────────────────────────────────────────────
+      # Step 7: build.py ကို run ခြင်း (PyInstaller build လုပ်သည်)
+      # ─────────────────────────────────────────────────────────────
+      - name: Run build.py
+        shell: bash
         run: |
-          mkdir -p deb_build/DEBIAN
-          mkdir -p deb_build/opt/yawstar-u-tube-downloader
-          mkdir -p deb_build/usr/bin
-          mkdir -p deb_build/usr/share/applications
-          mkdir -p deb_build/usr/share/icons/hicolor/256x256/apps
+          python build.py
 
-          # Binary Files များ ကူးယူခြင်း
-          cp -r dist/YawStar_U-Tube_Downloader/* deb_build/opt/yawstar-u-tube-downloader/
-          chmod +x deb_build/opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader
-
-          # Symlink သတ်မှတ်ခြင်း နှင့် Icon များ ကူးယူခြင်း
-          ln -s /opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader deb_build/usr/bin/yawstar-u-tube-downloader
-          cp assets/images/app_icon.png deb_build/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
-
-          # Linux Menu ပေါ်တွင် ပေါ်စေမည့် .desktop ဖိုင်ဖန်တီးခြင်း
-          cat <<EOF > deb_build/usr/share/applications/yawstar-u-tube-downloader.desktop
-          [Desktop Entry]
-          Version=1.0
-          Type=Application
-          Name=YawStar U-Tube Downloader
-          Comment=YawStar U-Tube Downloader Application
-          Exec=/opt/yawstar-u-tube-downloader/YawStar_U-Tube_Downloader %U
-          Icon=yawstar-u-tube-downloader
-          Terminal=false
-          StartupNotify=true
-          Categories=Network;AudioVideo;Video;Utility;
-          EOF
-
-          # Debian Control File ဖန်တီးခြင်း
-          cat <<EOF > deb_build/DEBIAN/control
-          Package: yawstar-u-tube-downloader
-          Version: ${APP_VERSION}
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: YawStar
-          Description: YawStar U-Tube Downloader Application
-          EOF
-
-          # .deb သွင်းပြီးချိန်တွင် Desktop Menu Database ကို Refresh လုပ်ပေးမည့် Script (postinst)
-          cat <<EOF > deb_build/DEBIAN/postinst
-          #!/bin/sh
-          set -e
-          if [ -x "\$(command -v update-desktop-database)" ]; then
-            update-desktop-database -q /usr/share/applications || true
-          fi
-          if [ -x "\$(command -v gtk-update-icon-cache)" ]; then
-            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
-          fi
-          EOF
-          chmod +x deb_build/DEBIAN/postinst
-
-          # .deb ဖြုတ်လိုက်ချိန်တွင် Desktop Menu Database ကို Refresh လုပ်ပေးမည့် Script (postrm)
-          cat <<EOF > deb_build/DEBIAN/postrm
-          #!/bin/sh
-          set -e
-          if [ -x "\$(command -v update-desktop-database)" ]; then
-            update-desktop-database -q /usr/share/applications || true
-          fi
-          if [ -x "\$(command -v gtk-update-icon-cache)" ]; then
-            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
-          fi
-          EOF
-          chmod +x deb_build/DEBIAN/postrm
-
-          mkdir -p artifacts
-          dpkg-deb --build deb_build "artifacts/YawStar_U-Tube_Downloader_${APP_VERSION}_amd64.deb"
-
-      # --- BUILD APPIMAGE ---
-      - name: Build AppImage
-        if: matrix.target == 'appimage'
-        env:
-          APP_VERSION: ${{ needs.prepare.outputs.version }}
+      # ─────────────────────────────────────────────────────────────
+      # Step 8: Build output ကို verify လုပ်ခြင်း
+      # ─────────────────────────────────────────────────────────────
+      - name: Verify build output
+        shell: bash
         run: |
-          mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          
-          cp -r dist/YawStar_U-Tube_Downloader/* AppDir/usr/bin/
-          cp assets/images/app_icon.png AppDir/yawstar-u-tube-downloader.png
-          cp assets/images/app_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/yawstar-u-tube-downloader.png
+          echo "=== Checking output directory ==="
+          ls -la "${{ matrix.output_dir }}" || true
 
-          cat <<EOF > AppDir/yawstar-u-tube-downloader.desktop
-          [Desktop Entry]
-          Version=1.0
-          Type=Application
-          Name=YawStar U-Tube Downloader
-          Exec=YawStar_U-Tube_Downloader %U
-          Icon=yawstar-u-tube-downloader
-          Terminal=false
-          StartupNotify=true
-          Categories=Network;AudioVideo;Video;Utility;
-          EOF
+          APP_PATH="${{ matrix.output_dir }}/${{ matrix.app_folder }}/${{ matrix.executable }}"
+          echo "Looking for: $APP_PATH"
 
-          cat <<'EOF' > AppDir/AppRun
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "$0")")"
-          exec "$HERE/usr/bin/YawStar_U-Tube_Downloader" "$@"
-          EOF
+          if [ ! -f "$APP_PATH" ]; then
+            echo "❌ Build output not found!"
+            echo "Listing all files in output dir:"
+            find "${{ matrix.output_dir }}" -type f | head -50
+            exit 1
+          fi
+          echo "✅ Build output verified"
 
-          chmod +x AppDir/AppRun
+      # ─────────────────────────────────────────────────────────────
+      # Step 9: Archive ဖန်တီးခြင်း (Linux/macOS - tar.gz)
+      # ─────────────────────────────────────────────────────────────
+      - name: Package archive (Linux/macOS)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          cd "${{ matrix.output_dir }}"
+          # App folder ကို tar.gz ဖြင့် ချုံ့
+          tar -czf "$GITHUB_WORKSPACE/${{ matrix.archive_name }}.tar.gz" "${{ matrix.app_folder }}"
+          echo "✅ Created archive: ${{ matrix.archive_name }}.tar.gz"
+          ls -lh "$GITHUB_WORKSPACE/${{ matrix.archive_name }}.tar.gz"
 
-          mkdir -p artifacts
-          ARCH=x86_64 appimagetool --appimage-extract-and-run AppDir "artifacts/YawStar_U-Tube_Downloader-${APP_VERSION}-x86_64.AppImage"
+      # ─────────────────────────────────────────────────────────────
+      # Step 10: Archive ဖန်တီးခြင်း (Windows - zip)
+      # ─────────────────────────────────────────────────────────────
+      - name: Package archive (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          cd "${{ matrix.output_dir }}"
+          Compress-Archive -Path "${{ matrix.app_folder }}" -DestinationPath "$env:GITHUB_WORKSPACE/${{ matrix.archive_name }}.zip" -Force
+          Write-Host "✅ Created archive: ${{ matrix.archive_name }}.zip"
+          Get-Item "$env:GITHUB_WORKSPACE/${{ matrix.archive_name }}.zip" | Format-List
 
-      - name: Upload Single Target Artifact
+      # ─────────────────────────────────────────────────────────────
+      # Step 11: Archive ကို artifact အဖြစ် upload လုပ်ခြင်း
+      # ─────────────────────────────────────────────────────────────
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact-${{ matrix.target }}
-          path: artifacts/*
-          if-no-files-found: error
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.archive_name }}.${{ matrix.archive_ext }}
+          retention-days: 30              # ၃၀ ရက် သိမ်းထားမည်
+          if-no-files-found: error        # ဖိုင်မတွေ့လျှင် error ပေးမည်
 
-  # ==========================================
-  # 3. METADATA & RELEASE JOB
-  # ==========================================
-  release:
-    name: Generate Checksums & Create Release
-    needs: [prepare, build]
-    runs-on: ubuntu-24.04
-    if: always() && !failure() && !cancelled()
-    steps:
-      - name: Download All Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release_assets
-          pattern: build-artifact-*
-          merge-multiple: true
+#   # ═════════════════════════════════════════════════════════════════════════
+#   # Job 2: Release - Tag push လုပ်သည့်အခါ GitHub Release ဖန်တီးခြင်း
+#   # ═════════════════════════════════════════════════════════════════════════
+#   release:
+#     name: Create Release
+#     needs: build                                    # build job ပြီးမှ run
+#     if: startsWith(github.ref, 'refs/tags/v')       # v* tag push လုပ်သည့်အခါသာ run
+#     runs-on: ubuntu-latest
 
-      - name: Generate SHA256 Checksums
-        run: |
-          cd release_assets
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+#     # GITHUB_TOKEN သို့ Release ဖန်တီးရန် write permission ပေးခြင်း
+#     permissions:
+#       contents: write
 
-      - name: Upload Final Artifacts Package
-        uses: actions/upload-artifact@v4
-        with:
-          name: YawStar_U-Tube_Downloader-Linux-Release
-          path: release_assets/*
+#     steps:
+#       # ─────────────────────────────────────────────────────────────
+#       # Step 1: Artifacts အားလုံးကို download လုပ်ခြင်း
+#       # ─────────────────────────────────────────────────────────────
+#       - name: Download all artifacts
+#         uses: actions/download-artifact@v4
+#         with:
+#           path: artifacts
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release_assets/*
-          name: YawStar U-Tube Downloader v${{ needs.prepare.outputs.version }}
-          tag_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+#       # ─────────────────────────────────────────────────────────────
+#       # Step 2: Release files များကို ပြင်ဆင်ခြင်း
+#       # ─────────────────────────────────────────────────────────────
+#       - name: Prepare release files
+#         shell: bash
+#         run: |
+#           mkdir -p release
+#           find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec cp {} release/ \;
+#           echo "=== Release files ==="
+#           ls -lh release/
+
+#       # ─────────────────────────────────────────────────────────────
+#       # Step 3: GitHub Release ဖန်တီးခြင်း
+#       # ─────────────────────────────────────────────────────────────
+#       - name: Create Release
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           files: release/*                  # release folder ထဲက ဖိုင်အားလုံး attach
+#           generate_release_notes: true      # commit များမှ auto release notes
+#           draft: false                      # draft အဖြစ် မသိမ်း
+#           prerelease: false                 # prerelease အဖြစ် မသတ်မှတ်
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

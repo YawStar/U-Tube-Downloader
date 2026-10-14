@@ -113,8 +113,24 @@ class YtDlpService:
             "--socket-timeout", "15",
             "--retries", "3",
             "--extractor-retries", "2",
+            "--fragment-retries", "10",
             "--dump-json",
         ]
+
+        args2: list[str] = [
+            "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+            "--no-warnings",
+            "--no-playlist",
+            "--ignore-config",
+            "--socket-timeout", "30",
+            "--retries", "15",
+            "--retry-sleep", "5",
+            "--extractor-retries", "5",
+            "--fragment-retries", "15",
+            "--ignore-no-formats-error",
+            "--dump-json",
+        ]
+
 
         # ---- Cookies ----
         args += self._build_cookies_args(settings)
@@ -354,3 +370,45 @@ class YtDlpService:
         host = settings.get("proxy_host", "127.0.0.1")
         port = settings.get("proxy_port", 10808)
         return ["--proxy", f"{host}:{port}"]
+
+    # ------------------------------------------------------------------
+    # FETCH PLAYLIST INFO args
+    # ------------------------------------------------------------------
+    def build_playlist_info_args(self, url: str, settings: dict[str, Any]) -> list[str]:
+        """
+        Playlist extraction အတွက် Fast Flat-Playlist args ဆောက်ပေးမည်။
+        
+        Args:
+            url: Playlist URL
+            settings: config.json မှ ဖတ်ထားသော settings
+
+        Returns:
+            yt-dlp command-line args list
+        """
+        args: list[str] = [
+            "--flat-playlist",
+            "--dump-single-json",
+            "--no-warnings",
+            "--ignore-errors",
+            "--socket-timeout", "15",
+            "--retries", "3",
+            "--extractor-retries", "2",
+        ]
+
+        # Cookies
+        args += self._build_cookies_args(settings)
+
+        # Proxy
+        args += self._build_proxy_args(settings)
+
+        # IPv selection
+        ipver = settings.get("ip_version", "Default")
+        if ipver != "Default":
+            if ipver == "IPv4":
+                args.append('--force-ipv4')
+            elif ipver == "IPv6":
+                args.append('--force-ipv6')
+
+        # URL
+        args.append(url)
+        return args

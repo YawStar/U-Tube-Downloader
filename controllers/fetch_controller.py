@@ -66,13 +66,14 @@ class FetchController(QObject):
         """ Process လုပ်နေတုန်းလားစစ် """
         return self.process.state() == QProcess.ProcessState.Running
 
-    def start(self, url: str, settings: dict) -> None:
+    def start(self, url: str, settings: dict, is_playlist: bool = False) -> None:
         """
         Fetch info စတင်
 
         Args:
-            url: video URL
+            url: video သို့မဟုတ် playlist URL
             settings: config settings dict
+            is_playlist: Playlist fast fetch သုံးမလား flag
         """
         if self.is_running():
             return
@@ -83,8 +84,12 @@ class FetchController(QObject):
         self._cancelled = False
         self._cookies_error_detected = False
 
-        # Args တည်ဆောက်
-        args = self.yt_dlp_service.build_info_args(url, settings)
+        # Args တည်ဆောက် (Playlist သို့မဟုတ် Single)
+        if is_playlist:
+            args = self.yt_dlp_service.build_playlist_info_args(url, settings)
+        else:
+            args = self.yt_dlp_service.build_info_args(url, settings)
+
         yt_dlp_path = self.yt_dlp_service.yt_dlp_path
 
         # Signal
@@ -182,7 +187,21 @@ class FetchController(QObject):
             return
 
         try:
-            info = json.loads(full_json)
+            # ✨ Extra data များနှင့် multi-line JSON များကို လုံခြုံစွာ parse လုပ်ရန်
+            info = None
+            try:
+                info = json.loads(full_json)
+            except json.JSONDecodeError:
+                # Decoder ကို အသုံးပြု၍ ပထမဆုံး valid JSON object ကို သီးသန့်ထုတ်ယူခြင်း
+                decoder = json.JSONDecoder()
+                obj, idx = decoder.raw_decode(full_json)
+                if isinstance(obj, dict):
+                    info = obj
+                else:
+                    raise
+
+            if not isinstance(info, dict):
+                raise ValueError("Parsed JSON is not a valid dictionary object.")
 
             # Best High-Res Thumbnail ရွေးချယ်
             thumbnails = info.get("thumbnails", [])

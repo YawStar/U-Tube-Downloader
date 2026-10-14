@@ -32,7 +32,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>3</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="tab_general">
       <attribute name="title">
@@ -1511,7 +1511,7 @@
                <number>65535</number>
               </property>
               <property name="value">
-               <number>4416</number>
+               <number>8080</number>
               </property>
              </widget>
             </item>
@@ -1588,89 +1588,21 @@
           <item>
            <layout class="QHBoxLayout" name="pluginRow2">
             <item>
-             <widget class="QLabel" name="lbl_pot_modules_title">
-              <property name="text">
-               <string>Server Modules / Dependencies:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="lbl_pot_modules_val">
-              <property name="text">
-               <string>~</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="pluginSpacer2">
-              <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btn_download_modules">
-              <property name="minimumSize">
-               <size>
-                <width>180</width>
-                <height>30</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>180</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Check Modules</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupPotPlugins">
-         <property name="title">
-          <string>POT Server Plugins</string>
-         </property>
-         <layout class="QVBoxLayout" name="potPluginsVLayout">
-          <property name="spacing">
-           <number>4</number>
-          </property>
-          <property name="topMargin">
-           <number>4</number>
-          </property>
-          <property name="bottomMargin">
-           <number>4</number>
-          </property>
-          <item>
-           <layout class="QHBoxLayout" name="pluginRow1">
-            <item>
              <widget class="QLabel" name="lbl_bgutil_plugin_title">
               <property name="text">
-               <string>bgutil-ytdlp-pot Provider Plugin:</string>
+               <string>yawstar ytdlp-pot-provider Plugin:</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QLabel" name="lbl_bgutil_plugin_val">
               <property name="text">
-               <string>Not Found</string>
+               <string>Not Installed</string>
               </property>
              </widget>
             </item>
             <item>
-             <spacer name="pluginSpacer1">
+             <spacer name="pluginSpacer2">
               <property name="orientation">
                <enum>Qt::Orientation::Horizontal</enum>
               </property>
@@ -1711,7 +1643,7 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>150</height>
+           <height>220</height>
           </size>
          </property>
          <property name="maximumSize">

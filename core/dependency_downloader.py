@@ -45,9 +45,36 @@ class DownloadWorker(QThread):
         self._is_running = True     # Thread ရပ်/မရပ် ထိန်းချုပ်ရန် Flag
         self.is_successful = False  # ဒေါင်းလုဒ် အောင်မြင်မှု ရှိ/မရှိ စစ်မယ့် Flag
 
-        # ✨ System Proxy အသုံးပြုနိုင်ရန် Session ပြင်ဆင်ခြင်း
+        # ✨ System Proxy အသုံးပြုနိုင်ရန် Session ပြင်ဆင်
         self.session = requests.Session()
         self.session.trust_env = True  # System environment proxies (HTTP_PROXY / HTTPS_PROXY) ကို ယူသုံးမယ်
+        
+        # ✨ OS-level System Proxy ကိုပါ ဖမ်းယူခြင်း (Windows / Linux / macOS)
+        self._apply_system_proxy()
+
+    def _apply_system_proxy(self):
+        """ OS တစ်ခုချင်းစီရဲ့ System Proxy ကို ရှာပြီး session ထဲ ထည့်ပေးတဲ့ function 
+            trust_env က env var ကိုပဲ ဖတ်တာမို့ တခါတလေ မမိဘူး အဲဒါကြောင့် ဒီ method ကိုထည့်တာ
+        """
+        try:
+            import urllib.request
+            
+            # getproxies() က OS အလိုက် proxy settings တွေကို auto-detect ဖြစ်အောင်လုပ်ပေးတယ်
+            # - Windows: Registry (Internet Options) + env vars
+            # - macOS:   System Configuration (networksetup / scutil)
+            # - Linux:   env vars + gsettings (GNOME)
+            system_proxies = urllib.request.getproxies()
+            
+            if system_proxies:
+                # niquests/requests မှာ session.proxies dict အနေနဲ့ ထည့်ရတယ်
+                self.session.proxies.update(system_proxies)
+                self.log_signal.emit(f"🌐 System proxy detected: {system_proxies}")
+            else:
+                self.log_signal.emit("🌐 No system proxy detected. Using direct connection.")
+                
+        except Exception as e:
+            # Proxy ရှာတာမှာ error တက်ရင် direct connection နဲ့ပဲ ဆက်သွားမယ်
+            self.log_signal.emit(f"⚠️ Could not detect system proxy: {e}")
 
     def run(self):
         if not os.path.exists(self.target_dir):

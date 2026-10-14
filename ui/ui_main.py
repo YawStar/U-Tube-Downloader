@@ -13,10 +13,14 @@ from PySide6.QtGui import (QFont, QIcon,
     QDesktopServices)
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel,
     QLineEdit, QProgressBar, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout, QWidget, QTextBrowser)
+    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout, QWidget, QTextBrowser,
+    QComboBox)
 
 # Resources file ကို import လုပ်
 import assets.resources_rc
+
+# Drag and drop
+from ui.dropthumbnaillabel import DropThumbnailLabel
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -57,11 +61,12 @@ class Ui_MainWindow(object):
         self.topHorizontalLayout = QHBoxLayout()
         self.topHorizontalLayout.setSpacing(20)
         self.topHorizontalLayout.setObjectName(u"topHorizontalLayout")
-        self.lblThumbnail = QLabel(self.centralwidget)
+        # self.lblThumbnail = QLabel(self.centralwidget)
+        self.lblThumbnail = DropThumbnailLabel(self.centralwidget)
         self.lblThumbnail.setObjectName(u"lblThumbnail")
         self.lblThumbnail.setMinimumSize(QSize(340, 190))
         self.lblThumbnail.setMaximumSize(QSize(340, 190))
-        self.lblThumbnail.setStyleSheet(u"border: 1px solid #888888; background-color: #222C36;")
+        self.lblThumbnail.setStyleSheet(u"border: 1px solid #888888; background-color: #0C1D2E;")
         self.lblThumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.topHorizontalLayout.addWidget(self.lblThumbnail)
@@ -148,9 +153,7 @@ class Ui_MainWindow(object):
 
         self.metaVerticalLayout.addWidget(self.lineBottom)
 
-
         self.topHorizontalLayout.addLayout(self.metaVerticalLayout)
-
 
         self.mainVerticalLayout.addLayout(self.topHorizontalLayout)
 
@@ -364,10 +367,53 @@ class Ui_MainWindow(object):
 
         self.optionLayout.addWidget(self.useMTimeButton)
 
+        self.changeModeButton = QPushButton(self.centralwidget)
+        self.changeModeButton.setObjectName(u"changeModeButton")
+        self.changeModeButton.setMinimumSize(QSize(28, 28))
+        self.changeModeButton.setMaximumSize(QSize(28, 28))
+        font2 = QFont()
+        font2.setFamilies([u"Pyidaungsu"])
+        font2.setPointSize(12)
+        font2.setBold(True)
+        self.changeModeButton.setFont(font2)
+        self.changeModeButton.setStyleSheet(u"/* \u1015\u102f\u1036\u1019\u103e\u1014\u103a Off \u1016\u103c\u1005\u103a\u1014\u1031\u1001\u103b\u102d\u1014\u103a (\u101e\u102d\u102f\u1037) \u1019\u1014\u103e\u102d\u1015\u103a\u101b\u101e\u1031\u1038\u1001\u1004\u103a \u1021\u1001\u103c\u1031\u1021\u1014\u1031 */\n"
+        "QPushButton {\n"
+        "    background-color: #E0E0E0;\n"
+        "    color: black;\n"
+        "    border: 1px solid #A0A0A0;\n"
+        "    border-radius: 5px;\n"
+        "    padding: 5px;\n"
+        "}\n"
+        "\n"
+        "/* \u1014\u103e\u102d\u1015\u103a\u101c\u102d\u102f\u1000\u103a\u101c\u102d\u102f\u1037 On (Toggle / Checked) \u1016\u103c\u1005\u103a\u101e\u103d\u102c\u1038\u1001\u103b\u102d\u1014\u103a Background \u1015\u103c\u1031\u102c\u1004\u103a\u1038\u1019\u100a\u1037\u103a\u1015\u102f\u1036\u1005\u1036 */\n"
+        "QPushButton:checked {\n"
+        "    background-color: #00A2FF; /* \u1005\u102d\u1019\u103a\u1038\u101b\u1031\u102c\u1004\u103a \u1015\u103c\u1031\u102c\u1004\u103a\u1038\u101e\u103d\u102c\u1038\u1019\u100a\u103a */\n"
+        "    color: white;\n"
+        "    border: 1px solid #388E3C;\n"
+        "}")
+        self.changeModeButton.setIcon(QIcon(":/images/images/shield.svg"))
+        self.changeModeButton.setIconSize(QSize(28, 28))
+        self.changeModeButton.setCheckable(True)
+        self.changeModeButton.setChecked(False)
+
+        self.optionLayout.addWidget(self.changeModeButton)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.optionLayout.addItem(self.horizontalSpacer)
 
+        self.lblDownloadDir = QLabel(self.centralwidget)
+        self.lblDownloadDir.setObjectName(u"lblDownloadDir")
+        self.lblDownloadDir.setStyleSheet(u"font: 11pt \"Pyidaungsu\";")
+        self.optionLayout.addWidget(self.lblDownloadDir)
+
+        self.downloadDirCombo = QComboBox(self.centralwidget)
+        self.downloadDirCombo.setObjectName(u"downloadDirCombo")
+        self.downloadDirCombo.setMinimumSize(QSize(250, 28))
+        self.downloadDirCombo.setMaximumSize(QSize(16777215, 28))
+        self.downloadDirCombo.setStyleSheet(u"font: 10pt \"Pyidaungsu\";")
+
+        self.optionLayout.addWidget(self.downloadDirCombo)
 
         self.mainVerticalLayout.addLayout(self.optionLayout)
 
@@ -551,13 +597,17 @@ class Ui_MainWindow(object):
         self.embMetadataButton.setText("")
 #if QT_CONFIG(tooltip)
         self.useMTimeButton.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:400; font-style:italic;\">Modification time</span></p></body></html>", None))
-#endif // QT_CONFIG(tooltip)
         self.useMTimeButton.setText("")
 #if QT_CONFIG(tooltip)
+        self.skipSponsorsButton.setText("")
         self.skipSponsorsButton.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:400; font-style:italic;\">Skip Sponsors Blocks</span></p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
-        self.skipSponsorsButton.setText("")
-        self.txtInfoLog.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.changeModeButton.setText("")
+        self.changeModeButton.setToolTip(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:10pt; font-weight:400; font-style:italic;\">Toggle Privacy Mode</span></p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.lblDownloadDir.setText(QCoreApplication.translate("MainWindow", u"Output Dir", None))
+#if QT_CONFIG(tooltip)
+        self.txtInfoLog.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"                                                           
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
