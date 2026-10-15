@@ -352,7 +352,7 @@ This tool is intended for **personal use only**. Please respect copyright laws a
 
 <div align="center">
 
-**[⬆ Back to Top](#-access-configurations)**
+**[⬆ Back to Top](#)**
 
 Made with 💚 by YawHackka
 
