@@ -1,3 +1,4 @@
+<div id="top"></div>
 <div align="center">
 <img src="./assets/images/app_icon.png" width="80" height="80" alt="yt-dlp GUI">
 
@@ -366,7 +367,7 @@ YawStar-U-Tube-Downloader/
 
 <div align="center">
 
-**[⬆ အပေါ်သို့ ပြန်သွားရန်](#)**
+**[⬆ အပေါ်သို့ ပြန်သွားရန်](#top)**
 
 ယောဟက္က က 💚 ဖြင့်ဖန်တီးသည်
 
