@@ -1,3 +1,4 @@
+<div id="top"></div>
 <div align="center">
 <img src="./assets/images/app_icon.png" width="80" height="80" alt="yt-dlp GUI">
 
@@ -352,7 +353,7 @@ This tool is intended for **personal use only**. Please respect copyright laws a
 
 <div align="center">
 
-**[⬆ Back to Top](#)**
+**[⬆ Back to Top](#top)**
 
 Made with 💚 by YawHackka
 
