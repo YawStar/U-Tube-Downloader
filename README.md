@@ -366,7 +366,7 @@ YawStar-U-Tube-Downloader/
 
 <div align="center">
 
-**[⬆ အပေါ်သို့ ပြန်သွားရန်](#-access-configurations)**
+**[⬆ အပေါ်သို့ ပြန်သွားရန်](#)**
 
 ယောဟက္က က 💚 ဖြင့်ဖန်တီးသည်
 
