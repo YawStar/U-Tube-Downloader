@@ -347,3 +347,14 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## ⚠️ Disclaimer
 
 This tool is intended for **personal use only**. Please respect copyright laws and the terms of service of the websites you download from. The developer is not responsible for any misuse.
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#-access-configurations)**
+
+Made with 💚 by YawHackka
+
+</div>
+</dev>
