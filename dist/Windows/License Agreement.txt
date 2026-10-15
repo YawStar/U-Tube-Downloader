@@ -1,4 +1,4 @@
-YawStar U-Tube Downloader (R) ဗားရှင်း 1.0.0.30
+YawStar U-Tube Downloader (R) ဗားရှင်း 1.0.0.31
 မူပိုင်ခွင့် (c) 2009 - 2026 https://yawstar.blogspot.com
 မူပိုင်ခွင့်များ ရယူထားပြီးဖြစ်သည်။
 
@@ -31,7 +31,7 @@ E-mail: yawstar.2009@gmail.com
 
 -----------------------------------------------------------------------------------------
 
-YawStar U-Tube Downloader (R) version 1.0.0.29
+YawStar U-Tube Downloader (R) version 1.0.0.31
 Copyright (c) 2009 - 2026 https://yawstar.blogspot.com
 All rights reserved.
 

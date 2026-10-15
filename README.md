@@ -1,85 +1,108 @@
+<div align="center">
+<img src="./assets/images/app_icon.png" width="80" height="80" alt="yt-dlp GUI">
+
 # YawStar U-Tube Downloader
 
-**An advanced, modern, and user-friendly desktop application built with Python and PySide6 (Qt) for downloading high-quality videos, audio, and playlists from YouTube and thousands of supported websites using `yt-dlp`, `Deno`, and `ffmpeg`.**
+**YouTube နှင့် အခြားသော ဝဘ်ဆိုဒ်များစွာမှ အရည်အသွေးမြင့် ဗီဒီယိုများ၊ အသံဖိုင်များနှင့် ပလေလစ်များကို `yt-dlp`၊ `Deno` နှင့် `ffmpeg` တို့ကို အသုံးပြု၍ လွယ်ကူလျင်မြန်စွာ ဒေါင်းလုဒ်လုပ်နိုင်သော Python နှင့် PySide6 (Qt) ဖြင့် တည်ဆောက်ထားသည့် ခေတ်မီပြီး အဆင့်မြင့်သော မျက်နှာပြင်ပါဝင်သည့် Desktop အက်ပ်တစ်ခု ဖြစ်ပါသည်။**
 
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+**YouTube၊ Facebook၊ Twitter/X၊ Bilibili နှင့် [ဝဘ်ဆိုဒ်ပေါင်း ၁၀၀၀ ကျော်](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)မှ ဗီဒီယိုများကို လွယ်ကူစွာ ဒေါင်းလုဒ် လုပ်နိုင်ပါသည်။**
+
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-blue)
+[![Release](https://img.shields.io/github/v/release/YawStar/U-Tube-Downloader?color=f0f0f0&labelColor=555555)](https://github.com/YawStar/U-Tube-Downloader/releases)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-active-success)
 
----
+**မြန်မာ** | [English](./README.en-us.md)
 
-## 📑 Table of Contents
-
-- [Screenshots](#-screenshots)
-- [Key Features](#-key-features)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [Configuration & Storage](#️-configuration--storage)
-- [Version History Highlights](#-version-history-highlights)
-- [Contributing](#-contributing)
-- [Support the Developer](#-support-the-developer)
-- [Credits](#-credits)
-- [License](#-license)
-- [Disclaimer](#️-disclaimer)
+</div>
 
 ---
 
-## 📸 Screenshots
+## 📑 မာတိကာ (Table of Contents)
 
-<p align="center">
-  <h3>Main Interface</h3>
-  <img src="screenshots/main_window.png" alt="Main Interface" width="700"/>
-</p>
+- [စခရင်ရှော့များ (Screenshots)](#-စခရင်ရှော့များ-screenshots)
 
-<p align="center">
-  <h3>Fetched Info</h3>
-  <img src="screenshots/fetched_info.png" alt="Fetched Info" width="700"/>
-</p>
+- [အဓိက အင်္ဂါရပ်များ (Key Features)](#-အဓိက-အင်္ဂါရပ်များ-key-features)
 
-<p align="center">
-  <h3>Format Selector</h3>
-  <img src="screenshots/format_selection.png" alt="Format Selection" width="700"/>
-</p>
+- [ပရောဂျက် တည်ဆောက်ပုံ (Project Structure)](#-ပရောဂျက်-တည်ဆောက်ပုံ-project-structure)
 
-<p align="center">
-  <h3>Preferences & Settings</h3>
-  <img src="screenshots/preferences_general.png" alt="General Preferences" width="48%"/>
-  <img src="screenshots/preferences_cookies.png" alt="Cookie Settings" width="48%"/>
-</p>
+- [စတင်အသုံးပြုခြင်း (Getting Started)](#-စတင်အသုံးပြုခြင်း-getting-started)
 
-<p align="center">
-  <h3>URL History Dialog</h3>
-  <img src="screenshots/url_history.png" alt="About Dialog" width="700"/>
-</p>
+- [ဖွဲ့စည်းပုံနှင့် သိမ်းဆည်းမှု (Configuration & Storage)](#️-ဖွဲ့စည်းပုံနှင့်-သိမ်းဆည်းမှု-configuration--storage)
 
-<p align="center">
-  <h3>About Dialog</h3>
-  <img src="screenshots/about_dialog.png" alt="About Dialog" width="700"/>
-</p>
+- [မူကွဲသမိုင်း အနှစ်ချုပ် (Version History Highlights)](#-မူကွဲသမိုင်း-အနှစ်ချုပ်-version-history-highlights)
 
----
+- [ပူးပေါင်းပါဝင်ခြင်း (Contributing)](#-ပူးပေါင်းပါဝင်ခြင်း-contributing)
 
-## 🌟 Key Features
+- [ဆော့ဖ်ဝဲရေးသားသူကို ပံ့ပိုးရန် (Support the Developer)](#-ဆော့ဖ်ဝဲရေးသားသူကို-ပံ့ပိုးရန်-support-the-developer)
 
-- **🚀 Advanced Process Engine**: Powered by native `QProcess` system management for fluid multi-process execution (`yt-dlp`, `ffmpeg`, `deno`).
-- **📊 Real-time Progress Tracking**: Shows percentage, download speed, total size, elapsed time, ETA, and native Windows Taskbar progress integration (`ITaskbarList3`).
-- **🎛️ Format Selection Dialog**: Pick specific video & audio streams and resolutions.
-- **🎨 Rich Metadata & Media Embedding**: Option to embed video thumbnails, video chapters, subtitles, and full metadata tags directly into output files.
-- **📌 Magnet Window / Snap to Edges**: Smooth snapping functionality when moving application windows near screen edges.
-- **📋 Automatic Clipboard Monitor**: Detects copied media links on the fly for seamless link downloading.
-- **🖼️ High-Res Thumbnail Viewer & Downloader**: Interactive context menu for viewing and saving original HD video thumbnails (`WebP`, `JPG`, `PNG`). _Right-click the thumbnail to download just the thumbnail._
-- **🍪 Cookie Management & Grabber**: Supports multiple authentication methods (`None`, `File`, `Manual Text`, `Browser Cookies`) to easily bypass bot checks or age-restricted videos.
-- **🌐 Network & Proxy Controls**: Native support for socket timeouts, proxy configs (`HTTP/SOCKS`), and speed limit thresholds.
-- **🔔 Native System Tray Integration**: Minimizes to System Tray, desktop notifications on completion, and single-instance application control via `SingletonApplication`.
-- **📦 Built-in Dependency Downloader**: Built-in dialog to quickly verify and fetch required external binaries (`yt-dlp`, `ffmpeg`, `deno`).
-- **🌍 Multi-language & Font Support**: Bundled Myanmar fonts (Pyidaungsu, YawStar UI, ZawgyiOne2008) with UI translation-ready assets.
+- [ကျေးဇူးတင်လွှာ (Credits)](#-ကျေးဇူးတင်လွှာ-credits)
 
----
+- [လိုင်စင် (License)](#-လိုင်စင်-license)
 
-## 🛠️ Project Structure
+- [သတိပေးချက် (Disclaimer)](#️-သတိပေးချက်-disclaimer)
 
-```text
+## 📸 စခရင်ရှော့များ (Screenshots)
+
+## 🌟 အဓိက အင်္ဂါရပ်များ (Key Features)
+
+- **🚀 Advanced Process Engine**: လုပ်ငန်းစဉ်ပေါင်းစုံကို ချောမွေ့စွာ လုပ်ဆောင်နိုင်ရန်အတွက် native `QProcess` စနစ်ကို အသုံးပြုထားသည် (`yt-dlp`, `ffmpeg`, `deno`)။
+
+- **📊 Real-time Progress Tracking**: ရာခိုင်နှုန်း၊ ဒေါင်းလုဒ်အမြန်နှုန်း၊ စုစုပေါင်းဖိုင်ွယ်ဆိုဒ်၊ ကုန်ဆုံးချိန်၊ ခန့်မှန်းကျန်ရှိချိန် (ETA) နှင့် Windows Taskbar ပေါ်တွင် တိုက်ရိုက်ပြသပေးမှု (`ITaskbarList3`) တို့ကို ပြသပေးသည်။
+
+- **🎛️ Format Selection Dialog**: လိုချင်သည့် ဗီဒီယိုနှင့် အသံဖိုင် အရည်အသွေးများကို သီးသန့်ရွေးချယ်နိုင်ခြင်း။
+
+- **🎨 Rich Metadata & Media Embedding**: ဗီဒီယို Thumbnail များ၊ အခန်းကဏ္ဍများ (Chapters)၊ စာတန်းထိုးများ (Subtitles) နှင့် Metadata များကို ထည့်သွင်းပေးနိုင်ခြင်း။
+
+- **📌 Magnet Window / Snap to Edges**: အက်ပ်ဝင်းဒိုးကို စခရင်ဘေးစွန်းများသို့ ရွှေ့သည့်အခါ အလွယ်တကူ ကပ်သွားစေရန် ပြုလုပ်ပေးထားခြင်း။
+
+- **📋 Automatic Clipboard Monitor**: ကူးယူထားသော မီဒီယာလင့်ခ်များကို အလိုအလျောက် စစ်ဆေးဖမ်းယူပေးခြင်း။
+
+- **🖼️ High-Res Thumbnail Viewer & Downloader**: မူရင်း HD ဗီဒီယို Thumbnail များကို ကြည့်ရှုရန်နှင့် သိမ်းဆည်းရန် Interactive context menu (`WebP`, `JPG`, `PNG`) ပါရှိခြင်း။
+
+- **🍪 Cookie Management & Grabber**: ဘော့တ်စစ်ဆေးမှုများ သို့မဟုတ် အသက်ကန့်သတ်ထားသော ဗီဒီယိုများကို ကျော်လွှားရန် authentication နည်းလမ်းများကို ထောက်ပံ့ပေးသည်။
+
+- **🌐 Network & Proxy Controls**: Socket timeouts၊ proxy configs (`HTTP/SOCKS`) နှင့် အမြန်နှုန်း ကန့်သတ်ချက်များကို ထောက်ပံ့ပေးသည်။
+
+- **🔔 Native System Tray Integration**: System Tray သို့ Minimize လုပ်ထားနိုင်ခြင်း၊ ပြီးဆုံးပါက Notification ပေးပို့ခြင်းတို့ ပါဝင်သည်။
+
+- **📦 Built-in Dependency Downloader**: လိုအပ်သော external binaries များကို စစ်ဆေးဒေါင်းလုဒ်လုပ်ပေးနိုင်သော built-in dialog ပါရှိခြင်း။
+
+- **🌍 Multi-language & Font Support**: မြန်မာဖောင့်များ (Pyidaungsu, YawStar UI, ZawgyiOne2008) နှင့် UI ဘာသာပြန်ဆိုမှုများ ပါဝင်သည်။
+
+## ⬇️ Download
+
+သင့်ပလပ်ဖောင်းအတွက် နောက်ဆုံးထွက်ဗီဒီယိုကို [**Releases**](https://github.com/YawStar/U-Tube-Downloader/releases) မှ ဒေါင်းလုဒ်လုပ်ပါ -
+
+| Platform | File                          |
+| -------- | ----------------------------- |
+| Windows  | `.exe` installer              |
+| macOS    | `.dmg`                        |
+| Linux    | `.AppImage` / `.deb` / `.rpm` |
+
+### ⌨️ Keyboard Shortcuts
+
+| Shortcut               | Description                                                                         | Method / Function                |
+| ---------------------- | ----------------------------------------------------------------------------------- | -------------------------------- |
+| **`Ctrl + V`**         | ကလစ်ဘုတ်ထဲမှ URL ကို အလိုအလျောက်ကူးထည့်ပြီး အချက်အလက်များကို စတင်စစ်ဆေးသည်။         | `self.on_paste_clicked`          |
+| **`Ctrl + L`**         | URL ထည့်သွင်းသည့်ကွက်လပ်သို့ ဖိုကပ်စ်ပို့ပြီး စာသားအားလုံးကို Select မှတ်သည်။       | `self._focus_url_input`          |
+| **`Ctrl + Shift + X`** | URL ထည့်သွင်းသည့်ကွက်လပ်ကို ရှင်းလင်းဖျက်ဆီးသည်။                                    | `self._clear_url_input`          |
+| **`Ctrl + O`**         | လက်ရှိ ဒေါင်းလုဒ်ဖိုလ်ဒါကို ဖွင့်သည်။                                               | `self.on_open_folder_clicked`    |
+| **`Ctrl + S`**         | ဗီဒီယို သို့မဟုတ် ပလေလစ်၏ Thumbnail ပုံကို သိမ်းဆည်းသည်။                            | `self.save_thumbnail`            |
+| **`F5` / `Ctrl + R`**  | ထည့်သွင်းထားသော URL အတွက် အချက်အလက်များကို စတင်ရယူသည်။                              | `self.on_fetch_info_clicked`     |
+| **`F4`**               | မီဒီယာအတွက် ဖော်မတ်ရွေးချယ်သည့် ဒိုင်ယာလော့ခ်ကို ဖွင့်သည်။                          | `self.on_select_formats_clicked` |
+| **`F9`**               | ဒေါင်းလုဒ်လုပ်ခြင်းကို စတင်ခြင်း သို့မဟုတ် ရပ်တန့်သည်။                              | `self.on_download_clicked`       |
+| **`Ctrl + H`**         | ဒေါင်းလုဒ် မှတ်တမ်း ဒိုင်ယာလော့ခ်ကို ဖွင့်သည်။                                      | `self.on_history_clicked`        |
+| **`Ctrl + ,`**         | အက်ပ်၏ ဆက်တင်များ ဒိုင်ယာလော့ခ်ကို ဖွင့်သည်။                                        | `self.on_settings_clicked`       |
+| **`F1`**               | အက်ပ်အကြောင်း အသေးစိတ်ဖော်ပြသည့် About ဒိုင်ယာလော့ခ်ကို ဖွင့်သည်။                   | `self.on_about_button_clicked`   |
+| **`Ctrl + Shift + P`** | ကိုယ်ရေးကိုယ်တာ မုဒ် (Privacy mode) ကို ဖွင့်/ပိတ် ပြုလုပ်သည်။                      | `self.change_ui_mode`            |
+| **`Esc`**              | လုပ်ဆောင်နေဆဲ လုပ်ငန်းစဉ်ကို ရပ်တန့်သည် (သို့) URL ကွက်လပ်သို့ ဖိုကပ်စ်ပြန်ပို့သည်။ | `self._on_escape_pressed`        |
+| **`Ctrl + Q`**         | နောင်တွင် ထည့်သွင်းမည့် တန်းစီစနစ်အတွက် ချန်လှပ်ထားသည်။                             | `self.on_queue_clicked`          |
+
+## 🛠️ ပရောဂျက် တည်ဆောက်ပုံ (Project Structure)
+
+```
 YawStar-U-Tube-Downloader/
 │   .gitignore                  # Git Version Control ထဲ မထည့်ချင်သော ဖိုင်များကို သတ်မှတ်သည့်ဖိုင်
 │   .python-version             # uv package manager အတွက် သုံးမည့် Python version Pin ဖိုင်
@@ -202,108 +225,110 @@ YawStar-U-Tube-Downloader/
         process_utils.py        # Subprocess နှင့် Process Management Utilities
         text_utils.py           # Text Processing, Title Sanitation နှင့် Format Utility များ
         __init__.py
+
 ```
 
----
+## 🚀 စတင်အသုံးပြုခြင်း (Getting Started)
 
-## 🚀 Getting Started
-
-### Prerequisites
+### လိုအပ်ချက်များ (Prerequisites)
 
 - **Python 3.9+ (Recommand: 3.13.13)**
-- **uv** (An extremely fast Python package and project manager)
-- **Supported OS**: Windows 10/11 (fully featured with taskbar integration), Linux, macOS.
 
-### Installation & Execution with `uv`
+- **uv** (အလွန်လျင်မြန်သော Python package နှင့် project manager)
 
-1. **Clone the repository:**
+- **ထောက်ပံ့ပေးသော OS**: Windows 10/11 (taskbar integration ပါဝင်သည်), Linux, macOS။
 
-   ```bash
+### `uv` ဖြင့် တပ်ဆင်ခြင်းနှင့် လုပ်ဆောင်ခြင်း
+
+1. **Repository ကို Clone လုပ်ရန်:**
+
+   ```
    git clone https://github.com/yawstar/u-tube-downloader.git
+
    ```
 
-2. **Change Directory:**
+2. **Directory သို့ ဝင်ရန်:**
 
-   ```bash
+   ```
    cd u-tube-downloader
+
    ```
 
+3. **Dependencies များကို Sync လုပ်ပြီး တပ်ဆင်ရန်:**
 
-3. **Sync and install dependencies:**
-
-   ```bash
+   ```
    uv sync
+
    ```
 
-4. **Run the application:**
+4. **အက်ပ်ကို စတင်လည်ပတ်ရန်:**
 
-   ```bash
+   ```
    uv run main.py
+
    ```
 
----
+## ⚙️ ဖွဲ့စည်းပုံနှင့် သိမ်းဆည်းမှု (Configuration & Storage)
 
-## ⚙️ Configuration & Storage
-
-Application configurations and cache data are automatically saved under standard platform user data directories:
+အက်ပ်၏ configuration နှင့် cache ဒေတာများကို အောက်ပါ ပလပ်ဖောင်း သတ်မှတ်ထားသော user data directories များတွင် အလိုအလျောက် သိမ်းဆည်းပေးသည်-
 
 - **Windows**: `%APPDATA%\YawStar\YawStar U-Tube Downloader\config.json`
+
 - **Linux**: `~/.local/share/YawStar/YawStar U-Tube Downloader/config.json`
+
 - **macOS**: `~/Library/Application Support/YawStar/YawStar U-Tube Downloader/config.json`
 
-### Supported Cookie Modes
+### ထောက်ပံ့ထားသော Cookie မုဒ်များ (Supported Cookie Modes)
 
-- **None**: Download public media without credentials.
-- **Browser**: Extract authentication cookies directly from installed browsers (Chrome, Edge, Firefox, Brave).
-- **File**: Import a `.txt` cookie file (Netscape format).
-- **Manual**: Paste cookie string content directly in settings.
+- **None**: အထောက်အထားမပါဘဲ အများပြည်သူသုံး မီဒီယာများကို ဒေါင်းလုဒ်လုပ်ခြင်း။
 
----
+- **Browser**: တပ်ဆင်ထားသော ಬ್ರೌಸರ್‌များ (Chrome, Edge, Firefox, Brave) မှ cookies များကို တိုက်ရိုက်ထုတ်ယူခြင်း။
 
-## 📝 Version History Highlights
+- **File**: `.txt` cookie ဖိုင်ကို တင်သွင်းခြင်း (Netscape format)။
 
-- **v1.0.0.29**: HD Thumbnail exporter & Auto-Play on complete.
-- **v1.0.0.28**: Windows Taskbar integration (`ITaskbarList3`), PEP 8 refactoring, Singleton instance lock.
-- **v1.0.0.27**: Enhanced cookies handling & title length sanitation.
-- **v1.0.0.26**: System Tray background downloading & single instance execution.
-- **v1.0.0.21**: Format selection dialog and rich Preferences/Settings panel.
-- **v1.0.0.14**: Migrated process management to native Qt `QProcess`.
+- **Manual**: ဆက်တင်များတွင် cookie စာသားကို တိုက်ရိုက်ကူးထည့်ခြင်း။
 
----
+## 📝 မူကွဲသမိုင်း အနှစ်ချုပ် (Version History Highlights)
 
-## 🤝 Contributing
+- **v1.0.0.31**: YouTube Playlist များကို ဒေါင်းလုဒ် ပြုလုပ်နိုင်။
+- **v1.0.0.29**: HD Thumbnail exporter & Auto-Play on complete။
+- **v1.0.0.28**: Windows Taskbar integration (`ITaskbarList3`), PEP 8 refactoring, Singleton instance lock။
+- **v1.0.0.27**: Enhanced cookies handling & title length sanitation။
+- **v1.0.0.26**: System Tray background downloading & single instance execution။
+- **v1.0.0.21**: Format selection dialog နှင့် rich Preferences/Settings panel။
+- **v1.0.0.14**: Qt `QProcess` သို့ process management ကို ပြောင်းရွှေ့ခဲ့ခြင်း။
 
-Contributions, issues, and feature requests are welcome!
-Feel free to check the [issues page](../../issues) or submit a pull request.
+## 🤝 ပူးပေါင်းပါဝင်ခြင်း (Contributing)
 
----
+ပါဝင်ကူညီမှုများ၊ ပြဿနာများနှင့် လုပ်ဆောင်ချက်အသစ် တောင်းဆိုမှုများကို ကြိုဆိုပါတယ်!
+[issues page](../../issues) ကို စစ်ဆေးရန် သို့မဟုတ် pull request တင်သွင်းရန် ဖိတ်ခေါ်ပါတယ်။
 
-## 💖 Support the Developer
+## 💖 ဆော့ဖ်ဝဲရေးသားသူကို ပံ့ပိုးရန် (Support the Developer)
 
-If you find this app useful, consider supporting its development:
+ဤအက်ပ်သည် အသုံးဝင်သည်ဟု ယူဆပါက ဖွံ့ဖြိုးတိုးတက်မှုကို အောက်ပါအတိုင်း ပံ့ပိုးနိုင်ပါသည်-
 
-- ⭐ Star this repository
-- 🐛 Report bugs or suggest features via [Issues](../../issues)
-- ❤️ [Donate](https://yawstardancebox.github.io/donate/)
-- 🌍 Help with translations
+- ⭐ ဤ repository ကို Star ပေးပါ
 
----
+- 🐛 အမှားများကို သတင်းပို့ရန် သို့မဟုတ် [Issues](../../issues) မှတဆင့် အကြံပြုပါ
 
-## 🙏 Credits
+- ❤️ [Donate](https://yawstardancebox.github.io/donate/) ပြုလုပ်ပါ
+
+- 🌍 ဘာသာပြန်ဆိုရာတွင် ကူညီပေးပါ
+
+## 🙏 ကျေးဇူးတင်လွှာ (Credits)
 
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+
 - [FFmpeg](https://ffmpeg.org/)
+
 - [Deno](https://deno.land/)
+
 - [PySide6](https://doc.qt.io/qtforpython/)
 
----
+## 📄 လိုင်စင် (License)
 
-## 📄 License
+ဤပရောဂျက်သည် MIT License အောက်တွင် လိုင်စင်ရရှိထားပါသည် — အသေးစိတ်အတွက် [LICENSE](LICENSE) ဖိုင်ကို ကြည့်ပါ။
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+## ⚠️ သတိပေးချက် (Disclaimer)
 
----
-
-## ⚠️ Disclaimer
-
-This tool is intended for **personal use only**. Please respect copyright laws and the terms of service of the websites you download from. The developer is not responsible for any misuse.
+ဤကိရိယာကို **ကိုယ်ပိုင်သုံးစွဲရန်အတွက်သာ** ရည်ရွယ်ပါသည်။ ကျေးဇူးပြု၍ မူပိုင်ခွင့် ဥပဒေများနှင့် သင်ဒေါင်းလုဒ်လုပ်သည့် ဝဘ်ဆိုဒ်များ၏ ဝန်ဆောင်မှုစည်းမျဉ်းများကို လေးစားလိုက်နာပါ။ အလွဲသုံးစားလုပ်မှုတစ်စုံတစ်ရာအတွက် ဆော့ဖ်ဝဲရေးသားသူတွင် တာဝန်မရှိပါ။

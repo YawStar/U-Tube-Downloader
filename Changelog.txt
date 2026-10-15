@@ -1,6 +1,6 @@
 version 1.0.0.31
 {+} Background Blur Effect ထည့်သွင်း
-{^} History Dialog Logic ကို ပြင်ဆင် (Completed, Fetched, Error တို့ကိုအရောင်ပြောင်း)
+{^} History Dialog Logic ကို ပြင်ဆင် (Status တို့ကိုအရောင်နှင့်ပြသ)
 {+} Privacy Mode ထည့်သွင်း
 {*} App Close Event Bugs ကို ပြင်ဆင်
 {+} File Drag & Drop Info Feature ထည့်သွင်း
@@ -8,6 +8,7 @@ version 1.0.0.31
 {+} Shortcut Key များ ထည့်သွင်း
 {+} Quick Download Dir ရွေးချယ်နိုင်
 {+} Playlist ကို Download လုပ်နိုင်
+{^} Use Own POT feature
 
 version 1.0.0.30
 {*} QTrayNotification မှ desktop_notifier သို့ပြောင်းလဲ

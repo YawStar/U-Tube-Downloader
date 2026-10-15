@@ -1,0 +1,58 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    strategy:
+      fail-fast: false   # တစ်ခု fail ဖြစ်ရင် ကျန်တာ ဆက်လုပ်ရန်
+      matrix:
+        include:
+          - runner: macos-13   # Intel → amd64
+            arch: amd64
+          - runner: macos-14   # Apple Silicon → arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Show build environment
+        run: |
+          echo "Runner: ${{ matrix.runner }}"
+          echo "Expected arch: ${{ matrix.arch }}"
+          echo "Actual machine: $(uname -m)"
+          python3 -c "import platform; print('platform.machine():', platform.machine())"
+
+      - name: Build .app and .dmg
+        run: uv run --python 3.13 python build.py
+
+      - name: Verify DMG arch
+        run: |
+          APP_PATH=$(find dist/macOS -name "*.app" -maxdepth 3 | head -n 1)
+          BINARY=$(find "$APP_PATH/Contents/MacOS" -type f | head -n 1)
+          echo "Binary: $BINARY"
+          lipo -info "$BINARY"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg-${{ matrix.arch }}
+          path: dist/macOS/**/*.dmg
+          if-no-files-found: error
+
+      - name: Upload .app artifact (fallback)
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app-${{ matrix.arch }}
+          path: dist/macOS/**/*.app
+          if-no-files-found: ignore
