@@ -19,11 +19,11 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 LicenseFile=License Agreement.txt
-InfoAfterFile=YawStar U-Tube Downloader\Changelog.txt
+InfoAfterFile=amd64\YawStar U-Tube Downloader\Changelog.txt
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
-OutputDir=YawStar U-Tube Downloader_v1.0.0.31_x64_Setup
-OutputBaseFilename=YawStar_U-Tube_Downloader-1.0.0.31_x64_Setup
+OutputDir=..\Released
+OutputBaseFilename=yawstar-u-tube-downloader-1.0.0.31-windows-x64-setup
 SetupIconFile=setup_icon.ico
 SolidCompression=yes
 VersionInfoVersion={#MyAppVersion}
@@ -40,8 +40,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "YawStar U-Tube Downloader\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "YawStar U-Tube Downloader\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "amd64\YawStar U-Tube Downloader\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "amd64\YawStar U-Tube Downloader\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; YawStar U-Tube Downloader Folder ထဲသို့ ရောက်ရှိမည်

@@ -3,7 +3,7 @@
 COMPANY_NAME = "YawStar"
 AUTHOR = "YawHackka"
 APP_NAME = "YawStar U-Tube Downloader"
-APP_RELEASED_DATE = "15/Oct/2026"
+APP_RELEASED_DATE = "17/Oct/2026"
 APP_VERSION = "1.0.0.31"
 APP_DATA_PATH = "/var/data/app"
 APP_CONFIG_PATH = "/etc/app/config.json"

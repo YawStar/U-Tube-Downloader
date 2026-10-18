@@ -107,9 +107,17 @@ from core.clipboard_monitor import ClipboardMonitor
 from ui.format_dialog import FormatDialog
 from ui.settings_dialog import SettingsDialog
 
-# Imports
+# Queue Controller
 from controllers.queue_controller import QueueController, DownloadTask
+
+# Playlist Dialog
 from ui.playlist_dialog import PlaylistDialog
+
+# Sponsor Block Categories Dialog
+from ui.sponsorblock_dialog import SponsorBlockDialog
+
+# Subtitle Select Dialog
+from ui.sub_select_dialog import SubtitleSelectDialog, get_readable_language_name
 
 # Dependency Downloader
 import core.dependency_downloader
@@ -307,9 +315,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.awake_mode = None
 
         # =====================================================================
-        # 💤 Single Video or Playlist 
+        # Single Video or Playlist 
         # =====================================================================
         self.single_video_download = False
+
+        # =====================================================================
+        # Available Subtitle အတွက် စာရင်းအလွတ် ကြိုတင်ဖန်တီးထား
+        # =====================================================================
+        self.saved_selected_subtitles = []
 
         # =====================================================================
         # 🛜 Network Manager (ThumbnailService အတွက်)
@@ -321,12 +334,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # =====================================================================
         self.db_mgr = DatabaseManager(DB_PATH)
 
-
         # =====================================================================
         # ⌨️ Shortcut setup Init လုပ်
         # =====================================================================
         self._setup_shortcuts()
-
 
         # =====================================================================
         # ✨ Phase 1 — YtDlpService
@@ -537,6 +548,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.aboutButton.clicked.connect(self.on_about_button_clicked)
         self.changeModeButton.clicked.connect(self.change_ui_mode)
         self.lblThumbnail.file_dropped.connect(self.process_media_file)
+        self.skipSponsorsButton.clicked.connect(self.on_skip_sponsors_clicked)
+        self.embSubtitlesButton.clicked.connect(self.on_embedSubtitle_clicked)
 
         # Queue Controller Init
         self.queue_controller = QueueController(self.download_controller, self)
@@ -547,7 +560,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # ✨ Queue တစ်ခုလုံး လုံးဝ ပြီးဆုံးမှသာ ခေါ်ရန် (task တစ်ခုချင်းစီအတွက် မဟုတ်)
         self.queue_controller.all_tasks_finished.connect(self.on_queue_finished)
-
 
         # Recent Folders List (State) — Config မှ Load
         saved_history = self.config_mgr.get("download_path_history", [])
@@ -882,11 +894,51 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def check_necessary_files(self):
         return self.yt_dlp_service.check_necessary_files()
 
-    def open_dep_downloader(self):
+    def open_dep_downloader_BAK(self):
         self.dep_window = core.dependency_downloader.MainWindow(parent=self)
         self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
         self.dep_window.setWindowModality(Qt.WindowModal)
         self.dep_window.show()
+
+    def open_dep_downloader_BAK(self):
+        self.dep_window = core.dependency_downloader.MainWindow(parent=self)
+        self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
+        
+        # 1. Blur Overlay ကို အရင်ပြမယ်
+        if hasattr(self, 'blur_overlay'):
+            self.blur_overlay.show_overlay()
+            
+        # 2. Window ကို ပုံမှန်အတိုင်း show() နဲ့ပြမယ် (QMainWindow ဖြစ်လို့ error မတက်တော့ဘူး)
+        self.dep_window.show()
+        
+        # 3. Window ပိတ်သွားတဲ့အခါ Blur ပြန်ဖြုတ်ပေးဖို့ finished signal (သို့မဟုတ် destroyed) ကို ချိတ်မယ်
+        def on_dep_closed():
+            if hasattr(self, 'blur_overlay'):
+                self.blur_overlay.hide_overlay()
+                
+        self.dep_window.destroyed.connect(on_dep_closed)
+
+    def open_dep_downloader(self):
+        self.dep_window = core.dependency_downloader.MainWindow(parent=self)
+        self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
+        
+        # ✨ ဤနေရာတွင် Window Modality ကို WindowModal အဖြစ် သတ်မှတ်ပေးပါ
+        self.dep_window.setWindowModality(Qt.WindowModal)
+        
+        # Blur Overlay ကို ပြမယ်
+        if hasattr(self, 'blur_overlay'):
+            self.blur_overlay.show_overlay()
+            
+        # ✨ show() အစား exec() သုံး၍ (သို့မဟုတ် show() သုံးသော်လည်း WindowModal ဖြင့်) ဖွင့်မည်
+        # QMainWindow ဖြစ်သောကြောင့် show() သုံး၍ WindowModal ဖြင့် ချိတ်ဆက်ရပါမည်
+        self.dep_window.show()
+        
+        # Window ပိတ်သွားတဲ့အခါ Blur ပြန်ဖြုတ်ပေးရန်
+        def on_dep_closed():
+            if hasattr(self, 'blur_overlay'):
+                self.blur_overlay.hide_overlay()
+                
+        self.dep_window.destroyed.connect(on_dep_closed)
 
     # =========================================================================
     # ❌ Close / Exit
@@ -1168,6 +1220,48 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             logger.error(f"Settings dialog threads cleanup failed: {e}")
 
     def on_tray_quit(self):
+        # အလုပ်လုပ်နေသေးလား အရင်စစ်ဆေး
+        is_info_running = self.fetch_controller.is_running()
+        is_download_running = self.download_controller.is_running()
+
+        # Settings က Value တွေကို ဖတ်
+        global loaded_settings
+
+        # Privacy Mode status စစ်ဆေးခြင်း
+        is_privacy = getattr(self, 'is_privacy_mode', False)
+
+        # 💾 Window State ကို အရင်သိမ်း
+        self.save_window_state()
+
+        # Save Options Status
+        self.save_options_status()
+        
+        # Privacy Mode status စစ်ဆေးခြင်း
+        is_privacy = getattr(self, 'is_privacy_mode', False)
+
+        # နောက်ဆုံး သွင်းထားတဲ့ url ကိုသိမ်းဆည်း
+        if is_privacy:
+            if self.c_urlInput == None:
+                self.config_mgr.set('last_added_url', "")
+            else:
+                self.config_mgr.set('last_added_url', self.c_urlInput)
+        else:
+            self.config_mgr.set('last_added_url', self.urlInput.text())
+
+        # နောက်ဆုံး Privacy Mode Status ကိုသိမ်းဆည်း
+        self.config_mgr.set('privacy_mode', is_privacy)
+
+        # Download လုပ်နေတာကို ရပ်
+        self.statusbar.showMessage(StatusMsg.DOWNLOAD_CANCELLED)
+        self.download_controller.cancel()
+
+        # Thread အားလုံးကို ရပ်
+        self._cleanup_all_threads()
+
+        if self.tray_icon:
+            self.tray_icon.hide()
+
+        logger.info("Application exit — processes stopped")
         QApplication.quit()
 
     def on_tray_icon_activated(self, reason):
@@ -1817,9 +1911,111 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_about_button_clicked(self):
         about_dialog = ui.about.AboutDialog(self)
-        # about_dialog.exec()
         self.show_dialog_with_blur(about_dialog)
 
+    # =========================================================================
+    # Skip Sponsor Blocks
+    # =========================================================================
+    def on_skip_sponsors_clicked(self):
+        """ skipSponsorsButton ကို နှိပ်လိုက်သည့်အခါ SponsorBlockDialog ကို ဖွင့်မည် """
+        # dialog = SponsorBlockDialog(parent=self)
+        dialog = SponsorBlockDialog(config_mgr=self.config_mgr, parent=self)
+
+        # Blur Effect ဖြင့် Dialog ကို ပြသရန် (main.py တွင် ရှိပြီးသား show_dialog_with_blur ကို သုံးသည်)
+        result = self.show_dialog_with_blur(dialog)
+
+        if result == QDialog.Accepted:
+            # OK နှိပ်လိုက်သောအခါ Check လုပ်ထားသည့် categories များကို ရယူခြင်း
+            checked_categories = []
+            for category_name, checkbox in dialog.get_checked_categories():
+                if checkbox.isChecked():
+                    checked_categories.append(category_name)
+
+            # ရွေးချယ်ထားသည်များကို Log ထုတ်ရန် သို့မဟုတ် သိမ်းဆည်းရန်
+            # logger.info(f"SponsorBlock categories selected: {checked_categories}")
+            self.statusbar.showMessage(
+                f"SponsorBlock: Selected {len(checked_categories)} categories."
+            )
+            if len(checked_categories) > 0:
+                self.skipSponsorsButton.setChecked(True)
+            else:
+                self.skipSponsorsButton.setChecked(False)
+        else:
+            # Cancel နှိပ်လိုက်သောအခါ သို့မဟုတ် ပိတ်လိုက်သောအခါ
+            checked_categories = []
+            for category_name, checkbox in dialog.get_checked_categories():
+                if checkbox.isChecked():
+                    checked_categories.append(category_name)
+
+            if len(checked_categories) > 0:
+                self.skipSponsorsButton.setChecked(True)
+            else:
+                self.skipSponsorsButton.setChecked(False)
+                
+            self.statusbar.showMessage("SponsorBlock selection cancelled.")
+
+    # =========================================================================
+    # Subtitle Selection
+    # =========================================================================
+    def on_embedSubtitle_clicked(self):
+        """ CC ခလုတ်ကို နှိပ်လိုက်သည့်အခါ Fetch လုပ်ထားသော info မှ subtitles များကို ယူ၍ Dialog ပြရန် """
+        if not hasattr(self, 'info') or not self.info:
+            self.statusbar.showMessage("No video information available. Please fetch info first.")
+            return
+
+        # yt-dlp info မှ subtitles နှင့် automatic_captions များကို စုဆောင်းခြင်း
+        available_subs = []
+        
+        # Manual subtitles များကို စစ်ဆေးခြင်း
+        subtitles = self.info.get("subtitles", {})
+        if isinstance(subtitles, dict):
+            for lang_code in subtitles.keys():
+                available_subs.append(f"({lang_code})")
+
+        # Auto-generated captions များကို စစ်ဆေးခြင်း
+        auto_subs = self.info.get("automatic_captions", {})
+        if isinstance(auto_subs, dict):
+            for lang_code in auto_subs.keys():
+                available_subs.append(f"({lang_code}) [Auto-generated]")
+
+        # အကယ်၍ info ထဲတွင် sub တွေ မပါလာသေးပါက အထွေထွေ Language စာရင်းပုံစံ သို့မဟုတ် မူလစာရင်းကို ပြရန်
+        if not available_subs:
+            # available_subs = ["English (en)", "English (Auto-generated)", "Burmese (my)"]
+            available_subs = []
+
+        formatted_available_subs = [get_readable_language_name(sub) for sub in available_subs]
+
+        # SubtitleSelectDialog ကို ဖွင့်မည် (formatted_available_subs ကို ပို့ပေးပါ)
+        dialog = SubtitleSelectDialog(
+                    subtitles=formatted_available_subs, 
+                    pre_selected=self.saved_selected_subtitles,  
+                    parent=self
+                )
+        
+        # Dialog ကို Blur အသွင်အပြင်ဖြင့် ပြသရန်
+        if self.show_dialog_with_blur(dialog) == QDialog.Accepted:
+            selected_subtitles = dialog.get_selected_subtitles()
+            self.saved_selected_subtitles = selected_subtitles  # ရွေးထားတာတွေကို သိမ်းဆည်းရန် saved_selected_subtitles ထဲ တိုက်ရိုက်ထည့်
+            self.selected_subtitles_list = selected_subtitles
+            if len(selected_subtitles) > 0:
+                self.embSubtitlesButton.setChecked(True)
+            else:
+                self.embSubtitlesButton.setChecked(False)
+
+            if selected_subtitles:
+                self.statusbar.showMessage(f"Selected Subtitles: {', '.join(selected_subtitles)}")
+                logger.info(f"Selected subtitles for embedding: {selected_subtitles}")
+            else:
+                self.statusbar.showMessage("No subtitles selected.")
+        else:
+            selected_subtitles = dialog.get_selected_subtitles()
+            self.saved_selected_subtitles = selected_subtitles  # 👈 Cancel လုပ်ရင်တောင် လက်ရှိရွေးထားတာတွေကို မှတ်ထားရန်
+            self.selected_subtitles_list = selected_subtitles
+            if len(selected_subtitles) > 0:
+                self.embSubtitlesButton.setChecked(True)
+            else:
+                self.embSubtitlesButton.setChecked(False)
+    
     # =========================================================================
     # ✨ Phase 4 — ConfigManager သုံး (ရိုးရှင်းအောင်)
     # =========================================================================
@@ -3212,7 +3408,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # =========================================================================
     # ⬇️ DOWNLOAD
     # =========================================================================
-    def on_download_clicked(self):
+    def on_download_clicked_BAK(self):
         """ Download — DownloadController သို့မဟုတ် QueueController ကို delegate """
         # Tip Rotation ပြတာရပ်
         self.stop_tips_rotation()
@@ -3279,6 +3475,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         embedded_metadata = self.embMetadataButton.isChecked()
         use_mtime = self.useMTimeButton.isChecked()
         skip_sponsors_block = self.skipSponsorsButton.isChecked()
+
+        # ရွေးချယ်ထားသော subtitle များကို ဖတ်ယူခြင်း
+        selected_subs = getattr(self, 'selected_subtitles_list', [])
+        sub_langs = []
+        for sub in selected_subs:
+            import re
+            # ကွင်းစကွင်းပိတ် ( ) ထဲတွင် ရှိသော ကုဒ်ကို ရှာရန် (ဥပမာ: (my) သို့မဟုတ် (en) စသည်)
+            match = re.search(r'\(([a-z\-]+)\)', sub)
+            if match:
+                lang_code = match.group(1)
+                if lang_code not in sub_langs:
+                    sub_langs.append(lang_code)
+        
+        print(f"Selected Sub Lang = {sub_langs}")
+        logger.info(f"Selected Sub Langs for yt-dlp: {sub_langs}")
+        
+        # ---------------------------------------------------------
+        # 💡 ဤနေရာတွင် gui_overrides ထဲသို့ sub_langs ကို ထည့်ပေးရန်
+        # ---------------------------------------------------------
+        gui_overrides = {
+            "embed_thumbnail": embedded_thumbnail,
+            "embed_chapters": embedded_chapters,
+            "embed_subtitles": embedded_subtitle,
+            "embed_metadata": embedded_metadata,
+            "use_mtime": use_mtime,
+            "skip_sponsors_block": skip_sponsors_block,
+            "sub_langs": sub_langs,              # 👈 ဤနေရာတွင် ထည့်ပေးပါ
+        }
+        
 
         # Config မှာထည့်ဖို့ Value တွေပြင်ဆင်
         updated_data = {
@@ -3432,6 +3657,266 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "embed_metadata": embedded_metadata,
             "use_mtime": use_mtime,
             "skip_sponsors_block": skip_sponsors_block,
+        }
+
+        # Controller start
+        self.download_controller.start(
+            url=url,
+            settings=loaded_settings,
+            selected_format_id=self.selected_format_id,
+            gui_overrides=gui_overrides,
+            is_windows=(CURRENT_OS == "Windows"),
+        )
+
+    def on_download_clicked(self):
+        """ Download — DownloadController သို့မဟုတ် QueueController ကို delegate """
+        # Tip Rotation ပြတာရပ်
+        self.stop_tips_rotation()
+        
+        # Playlist Queue အလုပ်လုပ်နေရင် Queue ကို ရပ်ရန်
+        if hasattr(self, 'queue_controller') and self.queue_controller.is_running():
+            self.statusbar.showMessage("Playlist download cancelled.")
+            self.queue_controller.stop_queue()
+            self.on_queue_finished()
+            return
+
+        # Single Video Download အလုပ်လုပ်နေရင် Stop download
+        if self.download_controller.is_running():
+            self.statusbar.showMessage(StatusMsg.DOWNLOAD_CANCELLED)
+            self.download_controller.cancel()
+            return
+
+        # Dependencies တွေရှိမရှိ စစ်မယ်
+        dpc_check = window.check_necessary_files()
+        if dpc_check[0] != 0:
+            logger.warning(f"Missing dependencies: {dpc_check[0]}")
+            window.statusbar.showMessage("Need dependencies files...")
+            window.open_dep_downloader()
+
+            loop = QEventLoop()
+            window.dep_window.destroyed.connect(loop.quit)
+            loop.exec()
+
+            dpc_check_after = window.check_necessary_files()
+            if dpc_check_after[0] == 0:
+                window.statusbar.showMessage(StatusMsg.READY)
+            else:
+                window.statusbar.showMessage(
+                    "Dependencies download incomplete or failed!"
+                )
+        else:
+            window.statusbar.showMessage(StatusMsg.READY)
+
+        # URL ရှိမရှိစစ်မယ်
+        url = self.c_urlInput 
+        if not url:
+            self.statusbar.showMessage("Please enter a valid URL.")
+            logger.error("Please enter a valid URL.")
+            return
+        
+        # Config တွေကိုဖတ်မယ်
+        loaded_settings = self.config_mgr.get_all()
+
+        # Awake Mode ဖွင့်ထားမထား ဖတ်မယ်
+        prevent_sleep_while_dloading = loaded_settings.get(
+            ConfigKey.AWAKE_MODE, False
+        )
+
+        # Download Path ကို ဖတ်မယ်
+        download_path_cfg = loaded_settings.get(
+            ConfigKey.DOWNLOAD_PATH,
+            os.path.join(downloads_dir, 'YS U-Tube Downloader')
+        )
+
+        # GUI override
+        embedded_thumbnail = self.embThumbnailButton.isChecked()
+        embedded_chapters = self.embChaptersButton.isChecked()
+        embedded_subtitle = self.embSubtitlesButton.isChecked()
+        embedded_metadata = self.embMetadataButton.isChecked()
+        use_mtime = self.useMTimeButton.isChecked()
+        skip_sponsors_block = self.skipSponsorsButton.isChecked()
+
+        # ရွေးချယ်ထားသော subtitle များကို ဖတ်ယူခြင်း
+        selected_subs = getattr(self, 'selected_subtitles_list', [])
+        sub_langs = []
+        for sub in selected_subs:
+            import re
+            # ကွင်းစကွင်းပိတ် ( ) ထဲတွင် ရှိသော ကုဒ်ကို ရှာရန် (ဥပမာ: (my) သို့မဟုတ် (en) စသည်)
+            match = re.search(r'\(([a-z\-]+)\)', sub)
+            if match:
+                lang_code = match.group(1)
+                if lang_code not in sub_langs:
+                    sub_langs.append(lang_code)
+                    
+        logger.info(f"Selected Sub Langs for yt-dlp: {sub_langs}")
+        
+        # ---------------------------------------------------------
+        # 💡 ဤနေရာတွင် gui_overrides ထဲသို့ sub_langs ကို ထည့်ပေးရန်
+        # ---------------------------------------------------------
+        gui_overrides = {
+            "embed_thumbnail": embedded_thumbnail,
+            "embed_chapters": embedded_chapters,
+            "embed_subtitles": embedded_subtitle,
+            "embed_metadata": embedded_metadata,
+            "use_mtime": use_mtime,
+            "skip_sponsors_block": skip_sponsors_block,
+            "sub_langs": sub_langs,
+        }
+        
+
+        # Config မှာထည့်ဖို့ Value တွေပြင်ဆင်
+        updated_data = {
+            ConfigKey.EMBED_THUMBNAIL: embedded_thumbnail,
+            ConfigKey.EMBED_CHAPTERS: embedded_chapters,
+            ConfigKey.EMBED_SUBTITLES: embedded_subtitle,
+            ConfigKey.EMBED_METADATA: embedded_metadata,
+            ConfigKey.USE_MTIME: use_mtime,
+            ConfigKey.SKIP_SPONSORS_BLOCK: skip_sponsors_block,
+        }
+        # Config မှာ Value တွေထည့်သွင်း
+        self.config_mgr.update_multiple(updated_data)
+    
+        # =====================================================================
+        # ✨ Playlist ဖြစ်နေရင် Download ခလုတ်နှိပ်မှသာ Dialog ပြပြီး Queue စတင်မည်
+        # =====================================================================
+        is_playlist = isinstance(self.info, dict) and (self.info.get("_type") == "playlist" or "entries" in self.info)
+        if is_playlist:
+            self.single_video_download = False
+            entries = self.info.get("entries", [])
+            dialog = PlaylistDialog(self.info, parent=self)
+            result = self.show_dialog_with_blur(dialog)
+            
+            if result == QDialog.Accepted:
+                selected_entries = dialog.get_selected_entries()
+                if selected_entries:
+                    # Notification
+                    if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_STARTED):
+                        self.notification_service.send_notification(
+                            "Playlist Download Started",
+                            "Your download has been started."
+                        )
+
+                    # Taskbar
+                    self.taskbar_service.reset()
+                    self.taskbar_service.set_indeterminate()
+                    
+                    # LogOutput ကိုရှင်းပြီး Plain Text ကို ထည့်
+                    self.txtInfoLog.clear()
+                    self.txtInfoLog.insertPlainText(
+                        "✦-------------------- Playlist Download Process Started --------------------✦\n"
+                    )
+
+                    # နောက်ဆုံး စာကြောင်းပေါ်အောင်လုပ်
+                    self.txtInfoLog.ensureCursorVisible()
+
+                    # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
+                    logger.info(f"Playlist Download started: {url}")
+
+                    # Config မှာ Playlist Own Folder ရွေးထားမထား စစ်
+                    put_playlist_their_own_dir = loaded_settings.get("playlist_in_own_folder", False)
+                    if put_playlist_their_own_dir:
+                        playlist_title = self.info.get("title", "Playlist")
+                        # 📁 Windows/Linux Path များတွင် မပါသင့်သော Special Characters များကို ဖယ်ရှားရန် (Sanitize)
+                        safe_playlist_title = re.sub(r'[\\/*?:"<>|]', "", playlist_title).strip()
+                        if not safe_playlist_title:
+                            safe_playlist_title = "Playlist"
+                        channel_name = self.c_uploader
+                        # 📁 Windows/Linux Path များတွင် မပါသင့်သော Special Characters များကို ဖယ်ရှားရန် (Sanitize)
+                        safe_channel_id = re.sub(r'[\\/*?:"<>|]', "", channel_name).strip()
+                        if not safe_channel_id:
+                            safe_channel_id = "Channel_ID"
+                        download_path_cfg = os.path.join(download_path_cfg, f"{safe_channel_id}_{safe_playlist_title}")
+        
+                    # Download Folder ကို မရှိရင် ဖန်တီး
+                    if not os.path.exists(download_path_cfg):
+                        os.makedirs(download_path_cfg)
+                        
+                    # Queue / Download Controller ဆီသို့ Path အသစ်ကို ပို့ပေးရန် Settings ကို Copy ကူးပြီး Update လုပ်မည်
+                    playlist_settings = dict(loaded_settings)
+                    playlist_settings[ConfigKey.DOWNLOAD_PATH] = download_path_cfg
+                    
+                    # Config မှာ Awake mode ကိုသုံးဖို့ရွေးထားရင် Awake Mode ဖွင့်
+                    if prevent_sleep_while_dloading:
+                        self.awake_mode = keep.running()
+                        self.awake_mode.__enter__()
+
+                    self.start_playlist_download_from_entries(selected_entries, playlist_settings)
+
+                else:
+                    self.statusbar.showMessage("No videos selected from playlist.")
+                    self.set_controls_status(UiState.NORMAL)
+            else:
+                self.statusbar.showMessage("Playlist download cancelled.")
+                self.set_controls_status(UiState.NORMAL)
+                self.downloadButton.setText("Download")
+                self.progressBar.setVisible(False)
+                if self.is_marquee:
+                    self.marquee_progressbar(False)
+                    self.is_marquee = False
+
+            return # Playlist ဖြစ်နေလို့ ဆက်မသွားတော့ပဲပြန်
+
+        # =====================================================================
+        # 🎥 Single Video အတွက် Download Logic များ
+        # =====================================================================
+        self.single_video_download = True
+        # UI state
+        self.set_controls_status(UiState.DOWNLOADING) # Control Button တွေကို Downloading State ပြင်
+        self.downloadButton.setText("Stop Download") # Download Button ကို Stop Download စာသားပြောင်း
+        self.progressBar.setValue(0) # Progressbar ရာခိုင်နှုန်းကို 0 ပြောင်း
+        self.statusbar.showMessage(StatusMsg.DOWNLOAD_PREPARING) # Preparing လို့ ပြ
+
+        self.progressBar.setVisible(True) # Progressbar ကို ဖျောက်ထားတာကနေ ပြန်ဖေါ်
+
+        if not self.is_marquee: # Progressbar က Marquee မဟုတ်ရင် Marquee ပုံစံပြောင်း
+            self.marquee_progressbar(True)
+            self.is_marquee = True
+
+        self.downloadButton.setProperty("working", True) # Download Button ရဲ့ Property ကို ပြင်
+        self.downloadButton.style().unpolish(self.downloadButton) # Download Button ကို Unpolish လုပ်
+        self.downloadButton.style().polish(self.downloadButton) # Download Button ကို Polish ပြန်လုပ်
+        self.downloadButton.update() # Download Button ကို Update လုပ်
+            
+        # Config မှာ Start Download လုပ်ရင် Notification ကို ဖွင့်ထားလား စစ်ပြီး လုပ်ဆောင်
+        if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_STARTED):
+            self.notification_service.send_notification(
+                "Download Started",
+                "Your download has been started."
+            )
+
+        # Taskbar
+        self.taskbar_service.reset()
+        self.taskbar_service.set_indeterminate()
+
+        # LogOutput ကိုရှင်းပြီး Plain Text ကို ထည့်
+        self.txtInfoLog.clear()
+        self.txtInfoLog.insertPlainText(
+            "✦-------------------- Download Process Started "
+            "--------------------✦\n"
+        )
+        # Cursor ကိုဖျောက်
+        self.txtInfoLog.ensureCursorVisible()
+
+        # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
+        logger.info(f"Download started: {url}")
+        
+        # Download Folder ကို မရှိရင် ဖန်တီး
+        if not os.path.exists(download_path_cfg):
+            os.makedirs(download_path_cfg)
+
+        # Config မှာ Awake mode ကိုသုံးဖို့ရွေးထားရင် Awake Mode ဖွင့်
+        if prevent_sleep_while_dloading:
+            self.awake_mode = keep.running()
+            self.awake_mode.__enter__()
+
+        gui_overrides = {
+            "embed_thumbnail": embedded_thumbnail,
+            "embed_chapters": embedded_chapters,
+            "embed_subtitles": embedded_subtitle,
+            "embed_metadata": embedded_metadata,
+            "use_mtime": use_mtime,
+            "skip_sponsors_block": skip_sponsors_block,
+            "sub_langs": sub_langs,          # 👈 ဤနေရာတွင် Single Video အတွက် sub_langs ကို ထည့်သွင်းပေးထားပါသည်
         }
 
         # Controller start

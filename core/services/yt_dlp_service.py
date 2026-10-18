@@ -228,12 +228,50 @@ class YtDlpService:
             args.append("--continue")
 
         # ---- Embed options (main.py ရဲ့ if block တွေနဲ့ တူ) ----
+        # if embed_chapters:
+        #     args.append("--embed-chapters")
+        # if embed_subtitle:
+        #     # args.append("--embed-subs")
+        #     # args.append("--write-subs")
+        #     args.append("--write-auto-subs")
+        #     args.append("--embed-subs")
+        # if embed_thumbnail:
+        #     args.append("--embed-thumbnail")
+        # if embed_metadata:
+        #     args.append("--embed-metadata")
+
+        # ---- Chapters options ----
         if embed_chapters:
             args.append("--embed-chapters")
+            
+        # ---- Subtitle options ----
         if embed_subtitle:
+            # 💡 embed_subtitle ဖြစ်စေ၊ sub_langs ရွေးထားသည်ဖြစ်စေ Subtitle ပါလာလျှင် လုပ်ဆောင်ရန်
+            selected_sub_langs = get("sub_langs", get("selected_subtitles", ""))
+            if isinstance(selected_sub_langs, list):
+                selected_sub_langs = ",".join(selected_sub_langs)
+
+            print(f"Selected Sub Lang in Service = {selected_sub_langs}")
+
+            if selected_sub_langs:
+                # User က Dialog ကနေ Subtitle ဘာသာစကား သီးသန့်ရွေးထားလျှင်
+                args += ["--sub-langs", selected_sub_langs]
+                args.append("--write-subs")
+                args.append("--write-auto-subs")  # Auto-generated ပါ ရှာတွေ့စေရန်
+                args.append("--embed-subs")
+            elif embed_subtitle:
+                # UI က checkbox သက်သက်ကိုပဲ ခြစ်ထားလျှင် (Dialog မသုံးဘဲ)
+                args.append("--write-auto-subs")
+                args.append("--embed-subs")
+                
             args.append("--embed-subs")
+        
+            
+        # ---- Thumbnail options ----
         if embed_thumbnail:
             args.append("--embed-thumbnail")
+
+        # ---- Metadata options ----
         if embed_metadata:
             args.append("--embed-metadata")
 
@@ -296,15 +334,42 @@ class YtDlpService:
         args.append("--mtime" if use_mtime else "--no-mtime")
 
         # ---- skip sponsors block ----
+        # if skip_sponsors_block:
+        #     # args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
+        #     args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
+
         if skip_sponsors_block:
-            # args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
-            args += ["--sponsorblock-remove", "sponsor,selfpromo,interaction"]
+            # Config ထဲက key တွေနဲ့ yt-dlp parameter တွေကို တွဲချိတ်ထားတဲ့ dictionary
+            sb_mapping = {
+                "sponsorblock_sponsor": "sponsor",
+                "sponsorblock_selfpromo": "selfpromo",
+                "sponsorblock_interaction": "interaction",
+                "sponsorblock_intro": "intro",
+                "sponsorblock_outro": "outro",
+                "sponsorblock_preview": "preview",
+                "sponsorblock_nonmusic": "music_offtopic", # yt-dlp မှာ nonmusic ကို music_offtopic လို့ခေါ်ပါတယ်
+                "sponsorblock_filler": "filler"
+            }
+
+            # true ဖြစ်နေတဲ့ တန်ဖိုးတွေကိုပဲ ရွေးထုတ်မယ်
+            selected_categories = []
+            for config_key, ytdlp_value in sb_mapping.items():
+                if get(config_key, False) == True:
+                    selected_categories.append(ytdlp_value)
+            
+            if selected_categories:
+                # block တွေကို ကော်မာခံပြီးပေါင်းထည့်
+                # ဥပမာ- "sponsor,selfpromo" ဆိုတဲ့ string ဖြစ်လာမယ်
+                sb_args_string = ",".join(selected_categories)
+                
+                # yt-dlp အတွက် args ထဲ ထည့်
+                args += ["--sponsorblock-remove", sb_args_string]
+
 
         # ---- Output template (main.py နဲ့ တူ) ----
-        # args += ["--output", "%(title).200s.%(ext)s"]
         args += ["--output", output_template]
 
-        # ---- URL ---- (အမြဲ နောက်ဆုံး)
+        # ---- URL ---- (အမြဲ နောက်ဆုံးမှာထားတယ်)
         args.append(url)
         return args
 

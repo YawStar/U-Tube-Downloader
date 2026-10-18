@@ -3,6 +3,10 @@ __pycache__/
 *.py[oc]
 *.spec
 build/
+dist/Linux/YawStar_U-Tube_Downloader/
+dist/macOS/
+dist/Windows/YawStar U-Tube Downloader/
+dist/Released/
 test/
 wheels/
 *.egg-info

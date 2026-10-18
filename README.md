@@ -1,9 +1,10 @@
+<div id="top"></div>
 <div align="center">
 <img src="./assets/images/app_icon.png" width="80" height="80" alt="yt-dlp GUI">
 
 # YawStar U-Tube Downloader
 
-**YouTube နှင့် အခြားသော ဝဘ်ဆိုဒ်များစွာမှ အရည်အသွေးမြင့် ဗီဒီယိုများ၊ အသံဖိုင်များနှင့် ပလေလစ်များကို `yt-dlp`၊ `Deno` နှင့် `ffmpeg` တို့ကို အသုံးပြု၍ လွယ်ကူလျင်မြန်စွာ ဒေါင်းလုဒ်လုပ်နိုင်သော Python နှင့် PySide6 (Qt) ဖြင့် တည်ဆောက်ထားသည့် ခေတ်မီပြီး အဆင့်မြင့်သော မျက်နှာပြင်ပါဝင်သည့် Desktop အက်ပ်တစ်ခု ဖြစ်ပါသည်။**
+**YouTube နှင့် အခြားသော ဝဘ်ဆိုဒ်များစွာမှ အရည်အသွေးမြင့် ဗီဒီယိုများ၊ အသံဖိုင်များနှင့် ပလေးလစ် (Playlist) များကို `yt-dlp`၊ `Deno` နှင့် `ffmpeg` တို့ကို အသုံးပြု၍ လွယ်ကူလျင်မြန်စွာ ဒေါင်းလုဒ်လုပ်နိုင်ပါသည်။ Python နှင့် PySide6 (Qt) ဖြင့် တည်ဆောက်ထားသည့် ခေတ်မီပြီး အဆင့်မြင့်သော UI ပါဝင်သည့် Desktop အက်ပ်တစ်ခု ဖြစ်ပါသည်။**
 
 **YouTube၊ Facebook၊ Twitter/X၊ Bilibili နှင့် [ဝဘ်ဆိုဒ်ပေါင်း ၁၀၀၀ ကျော်](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)မှ ဗီဒီယိုများကို လွယ်ကူစွာ ဒေါင်းလုဒ် လုပ်နိုင်ပါသည်။**
 
@@ -45,23 +46,56 @@
 
 ## 📸 စခရင်ရှော့များ (Screenshots)
 
+<p align="center">
+  <h3>Main Interface</h3>
+  <img src="screenshots/main_window.png" alt="Main Interface" width="700"/>
+</p>
+
+<p align="center">
+  <h3>Fetched Info</h3>
+  <img src="screenshots/fetched_info.png" alt="Fetched Info" width="700"/>
+</p>
+
+<p align="center">
+  <h3>Format Selector</h3>
+  <img src="screenshots/format_selection.png" alt="Format Selection" width="700"/>
+</p>
+
+<p align="center">
+  <h3>Settings</h3>
+  <img src="screenshots/settings_general.png" alt="General Preferences" width="48%"/>
+  <img src="screenshots/settings_cookies.png" alt="Cookie Settings" width="48%"/>
+</p>
+
+<p align="center">
+  <h3>URL History Dialog</h3>
+  <img src="screenshots/url_history.png" alt="About Dialog" width="700"/>
+</p>
+
+<p align="center">
+  <h3>About Dialog</h3>
+  <img src="screenshots/about_dialog.png" alt="About Dialog" width="700"/>
+</p>
+
+---
+
 ## 🌟 အဓိက အင်္ဂါရပ်များ (Key Features)
 
 - **🚀 Advanced Process Engine**: လုပ်ငန်းစဉ်ပေါင်းစုံကို ချောမွေ့စွာ လုပ်ဆောင်နိုင်ရန်အတွက် native `QProcess` စနစ်ကို အသုံးပြုထားသည် (`yt-dlp`, `ffmpeg`, `deno`)။
 
-- **📊 Real-time Progress Tracking**: ရာခိုင်နှုန်း၊ ဒေါင်းလုဒ်အမြန်နှုန်း၊ စုစုပေါင်းဖိုင်ွယ်ဆိုဒ်၊ ကုန်ဆုံးချိန်၊ ခန့်မှန်းကျန်ရှိချိန် (ETA) နှင့် Windows Taskbar ပေါ်တွင် တိုက်ရိုက်ပြသပေးမှု (`ITaskbarList3`) တို့ကို ပြသပေးသည်။
+- **📊 Real-time Progress Tracking**: ရာခိုင်နှုန်း၊ ဒေါင်းလုဒ်အမြန်နှုန်း၊ စုစုပေါင်းဖိုင်ဆိုဒ်၊ ကုန်ဆုံးချိန်၊ ခန့်မှန်းကျန်ရှိချိန် (ETA) နှင့် Windows Taskbar ပေါ်တွင် တိုက်ရိုက်ပြသပေးမှု (`ITaskbarList3`) တို့ကို ပြသပေးသည်။
 
 - **🎛️ Format Selection Dialog**: လိုချင်သည့် ဗီဒီယိုနှင့် အသံဖိုင် အရည်အသွေးများကို သီးသန့်ရွေးချယ်နိုင်ခြင်း။
 
-- **🎨 Rich Metadata & Media Embedding**: ဗီဒီယို Thumbnail များ၊ အခန်းကဏ္ဍများ (Chapters)၊ စာတန်းထိုးများ (Subtitles) နှင့် Metadata များကို ထည့်သွင်းပေးနိုင်ခြင်း။
+- **🎨 Rich Metadata & Media Embedding**: ဗီဒီယို Thumbnail များ၊ အခန်းများ (Chapters)၊ စာတန်းထိုးများ (Subtitles) နှင့် Metadata များကို ထည့်သွင်းပေးနိုင်ခြင်း။
 
 - **📌 Magnet Window / Snap to Edges**: အက်ပ်ဝင်းဒိုးကို စခရင်ဘေးစွန်းများသို့ ရွှေ့သည့်အခါ အလွယ်တကူ ကပ်သွားစေရန် ပြုလုပ်ပေးထားခြင်း။
 
-- **📋 Automatic Clipboard Monitor**: ကူးယူထားသော မီဒီယာလင့်ခ်များကို အလိုအလျောက် စစ်ဆေးဖမ်းယူပေးခြင်း။
+- **📋 Automatic Clipboard Monitor**: Url တစ်ခုကို Copy ကူးယူလိုက်ရင် မီဒီယာလင့်ခ်များကို အလိုအလျောက် စစ်ဆေးဖမ်းယူပေးခြင်း။
 
 - **🖼️ High-Res Thumbnail Viewer & Downloader**: မူရင်း HD ဗီဒီယို Thumbnail များကို ကြည့်ရှုရန်နှင့် သိမ်းဆည်းရန် Interactive context menu (`WebP`, `JPG`, `PNG`) ပါရှိခြင်း။
 
-- **🍪 Cookie Management & Grabber**: ဘော့တ်စစ်ဆေးမှုများ သို့မဟုတ် အသက်ကန့်သတ်ထားသော ဗီဒီယိုများကို ကျော်လွှားရန် authentication နည်းလမ်းများကို ထောက်ပံ့ပေးသည်။
+- **🍪 Cookie Management & Grabber**: Bot စစ်ဆေးမှုများ သို့မဟုတ် အသက်ကန့်သတ်ထားသော ဗီဒီယိုများကို ကျော်လွှားရန် authentication နည်းလမ်းများကို ထောက်ပံ့ပေးသည်။
 
 - **🌐 Network & Proxy Controls**: Socket timeouts၊ proxy configs (`HTTP/SOCKS`) နှင့် အမြန်နှုန်း ကန့်သတ်ချက်များကို ထောက်ပံ့ပေးသည်။
 
@@ -73,7 +107,7 @@
 
 ## ⬇️ Download
 
-သင့်ပလပ်ဖောင်းအတွက် နောက်ဆုံးထွက်ဗီဒီယိုကို [**Releases**](https://github.com/YawStar/U-Tube-Downloader/releases) မှ ဒေါင်းလုဒ်လုပ်ပါ -
+သင့်ပလပ်ဖောင်းအတွက် နောက်ဆုံးထွက်ဗားရှင်းကို [**Releases**](https://github.com/YawStar/U-Tube-Downloader/releases) မှာ ဒေါင်းလုဒ်လုပ်နိုင်ပါတယ်။ -
 
 | Platform | File                          |
 | -------- | ----------------------------- |
@@ -244,28 +278,24 @@ YawStar-U-Tube-Downloader/
 
    ```
    git clone https://github.com/yawstar/u-tube-downloader.git
-
    ```
 
 2. **Directory သို့ ဝင်ရန်:**
 
    ```
    cd u-tube-downloader
-
    ```
 
 3. **Dependencies များကို Sync လုပ်ပြီး တပ်ဆင်ရန်:**
 
    ```
    uv sync
-
    ```
 
 4. **အက်ပ်ကို စတင်လည်ပတ်ရန်:**
 
    ```
    uv run main.py
-
    ```
 
 ## ⚙️ ဖွဲ့စည်းပုံနှင့် သိမ်းဆည်းမှု (Configuration & Storage)
@@ -331,4 +361,15 @@ YawStar-U-Tube-Downloader/
 
 ## ⚠️ သတိပေးချက် (Disclaimer)
 
-ဤကိရိယာကို **ကိုယ်ပိုင်သုံးစွဲရန်အတွက်သာ** ရည်ရွယ်ပါသည်။ ကျေးဇူးပြု၍ မူပိုင်ခွင့် ဥပဒေများနှင့် သင်ဒေါင်းလုဒ်လုပ်သည့် ဝဘ်ဆိုဒ်များ၏ ဝန်ဆောင်မှုစည်းမျဉ်းများကို လေးစားလိုက်နာပါ။ အလွဲသုံးစားလုပ်မှုတစ်စုံတစ်ရာအတွက် ဆော့ဖ်ဝဲရေးသားသူတွင် တာဝန်မရှိပါ။
+ယခု Application ကို **ကိုယ်ပိုင်သုံးစွဲရန်အတွက်သာ** ရည်ရွယ်ပါသည်။ ကျေးဇူးပြု၍ မူပိုင်ခွင့် ဥပဒေများနှင့် သင်ဒေါင်းလုဒ်လုပ်သည့် ဝဘ်ဆိုဒ်များ၏ ဝန်ဆောင်မှုစည်းမျဉ်းများကို လေးစားလိုက်နာပါ။ အလွဲသုံးစားလုပ်မှုတစ်စုံတစ်ရာအတွက် ဆော့ဖ်ဝဲရေးသားသူတွင် တာဝန်မရှိပါ။
+
+---
+
+<div align="center">
+
+**[⬆ အပေါ်သို့ ပြန်သွားရန်](#top)**
+
+ယောဟက္က က 💚 ဖြင့်ဖန်တီးသည်
+
+</div>
+</dev>

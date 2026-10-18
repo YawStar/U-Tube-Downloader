@@ -1,3 +1,4 @@
+import sys
 import os
 import platform
 import zipfile
@@ -5,13 +6,13 @@ import shutil
 import time
 import niquests as requests
 from PySide6.QtCore import QSize, QThread, Signal, Slot, Qt, QStandardPaths, QCoreApplication, QTimer
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, 
-                             QTextEdit, QWidget, QLabel, QProgressBar, QHBoxLayout, QCheckBox)
+from PySide6.QtGui import QFont, QIcon, QColor, QCursor
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, 
+                             QTextEdit, QWidget, QLabel, QProgressBar, QHBoxLayout, QCheckBox,
+                             QGraphicsDropShadowEffect, QFrame)
 
 # CONSTANTS
 import core.global_constants as CONST
-
 QCoreApplication.setOrganizationName(CONST.COMPANY_NAME)
 QCoreApplication.setApplicationName(CONST.APP_NAME)
 
@@ -30,118 +31,122 @@ APP_DATA_DIR = os.path.normpath(QStandardPaths.writableLocation(QStandardPaths.A
 APP_CACHE_DIR = os.path.join(APP_DATA_DIR, "Cache")
 TPT_DIR = os.path.join(APP_DATA_DIR, "Tools")
 
+# Compiled UI ကို ဖတ်
+from core.depD_ui import Ui_MainWindow
 
+
+# ═══════════════════════════════════════════════════════════════════
+# 🔄 DOWNLOAD WORKER THREAD
+# ═══════════════════════════════════════════════════════════════════
 class DownloadWorker(QThread):
-    log_signal = Signal(str)
-    progress_signal = Signal(int)       # Percentage (0-100)
-    status_signal = Signal(str)         # Speed & Size Text
-    finished_signal = Signal()
+    progress_signal = Signal(str, int)       # (target_name, percentage)
+    status_signal = Signal(str, str)         # (target_name, status_text)
+    finished_signal = Signal(str, bool)      # (target_name, is_successful)
 
-    def __init__(self, target_dir, skip_existing=False):
+    def __init__(self, target_dir, target_name, skip_existing=True):
         super().__init__()
         self.target_dir = target_dir
+        self.target_name = target_name  
         self.skip_existing = skip_existing
         self.os_type = platform.system().lower()
-        self._is_running = True     # Thread ရပ်/မရပ် ထိန်းချုပ်ရန် Flag
-        self.is_successful = False  # ဒေါင်းလုဒ် အောင်မြင်မှု ရှိ/မရှိ စစ်မယ့် Flag
+        self._is_running = True
+        self.is_successful = False
+        self.current_file = None
 
-        # ✨ System Proxy အသုံးပြုနိုင်ရန် Session ပြင်ဆင်
         self.session = requests.Session()
-        self.session.trust_env = True  # System environment proxies (HTTP_PROXY / HTTPS_PROXY) ကို ယူသုံးမယ်
-        
-        # ✨ OS-level System Proxy ကိုပါ ဖမ်းယူခြင်း (Windows / Linux / macOS)
+        self.session.trust_env = True
         self._apply_system_proxy()
 
     def _apply_system_proxy(self):
-        """ OS တစ်ခုချင်းစီရဲ့ System Proxy ကို ရှာပြီး session ထဲ ထည့်ပေးတဲ့ function 
-            trust_env က env var ကိုပဲ ဖတ်တာမို့ တခါတလေ မမိဘူး အဲဒါကြောင့် ဒီ method ကိုထည့်တာ
-        """
         try:
             import urllib.request
-            
-            # getproxies() က OS အလိုက် proxy settings တွေကို auto-detect ဖြစ်အောင်လုပ်ပေးတယ်
-            # - Windows: Registry (Internet Options) + env vars
-            # - macOS:   System Configuration (networksetup / scutil)
-            # - Linux:   env vars + gsettings (GNOME)
             system_proxies = urllib.request.getproxies()
-            
             if system_proxies:
-                # niquests/requests မှာ session.proxies dict အနေနဲ့ ထည့်ရတယ်
                 self.session.proxies.update(system_proxies)
-                self.log_signal.emit(f"🌐 System proxy detected: {system_proxies}")
-            else:
-                self.log_signal.emit("🌐 No system proxy detected. Using direct connection.")
-                
-        except Exception as e:
-            # Proxy ရှာတာမှာ error တက်ရင် direct connection နဲ့ပဲ ဆက်သွားမယ်
-            self.log_signal.emit(f"⚠️ Could not detect system proxy: {e}")
+        except Exception:
+            pass
 
     def run(self):
         if not os.path.exists(self.target_dir):
             os.makedirs(self.target_dir)
 
-        self.log_signal.emit(f"🔄 Machine type: {platform.system()} ({platform.architecture()[0]}) \n")
         self.is_successful = False 
 
         try:
-            if self.os_type == "windows":
-                self.download_windows()
-            elif self.os_type == "linux":
-                self.download_linux()
-            elif self.os_type == "darwin":
-                self.download_mac()
-            else:
-                self.log_signal.emit(f"❌ Sorry... This program does not support {platform.system()} OS.")
+            if self.target_name == "ytdlp":
+                self.download_ytdlp()
+            elif self.target_name == "ffmpeg":
+                self.download_ffmpeg()
+            elif self.target_name == "deno":
+                self.download_deno()
+            
+            if self._is_running:
+                self.is_successful = True
                 
         except Exception as e:
             if not self._is_running:
-                self.log_signal.emit("🛑 Download is cancelled by user!")
-                self.status_signal.emit("Download is stopped.")
+                self.status_signal.emit(self.target_name, "Download is stopped.")
             else:
-                self.log_signal.emit(f"❌ Error occurred: {str(e)}")
-                self.progress_signal.emit(0)
-                self.status_signal.emit("An unexpected error occurred!")
+                self.status_signal.emit(self.target_name, f"Error: {str(e)}")
+                self.progress_signal.emit(self.target_name, 0)
                 self.is_successful = False
         
-        self.finished_signal.emit()
+        if not self.is_successful:
+            self.cleanup_partial_file()
+
+        self.finished_signal.emit(self.target_name, self.is_successful)
 
     def stop(self):
-        """ အပြင်ကနေ ဒေါင်းလုဒ်ကို လှမ်းရပ်နိုင်ရန် function """
         self._is_running = False
+        self.cleanup_partial_file()
+
+    def cleanup_partial_file(self):
+        if self.current_file and not self.is_successful:
+            path = os.path.join(self.target_dir, self.current_file)
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
 
     def is_file_valid(self, filename):
-        """ ဖိုင်ရှိပြီးသားဟုတ်မဟုတ်နှင့် အသုံးပြုနိုင်သော ဖိုင်ဟုတ်မဟုတ် စစ်ဆေးခြင်း """
         target_path = os.path.join(self.target_dir, filename)
         if os.path.exists(target_path) and os.path.getsize(target_path) > 0:
             return True
         return False
 
     def download_file(self, url, filename):
-        """ Resume (လုပ်လက်စကဆက်ဒေါင်းခြင်း) စနစ်ပါဝင်သော ဒေါင်းလုဒ် helper function """
         if not self._is_running:
             return None
 
+        self.current_file = filename  
         path = os.path.join(self.target_dir, filename)
         
-        # စက်ထဲမှာ ဒေါင်းလက်စ ဖိုင်ရှိမရှိ စစ်ဆေးခြင်း
+        # အကယ်၍ skip_existing က False ဖြစ်နေပါက (Overwrite လုပ်ခိုင်းမယ်)
+        if not self.skip_existing and os.path.exists(path):
+            try:
+                os.remove(path)
+            except Exception:
+                pass
+
         existing_file_size = 0
-        if os.path.exists(path):
+        if self.skip_existing and os.path.exists(path):
             existing_file_size = os.path.getsize(path)
 
         headers = {}
-        # ရှိပြီးသားဖိုင်ဆိုဒ် ရှိနေရင် Range Header ထည့်မယ်
-        if existing_file_size > 0:
+        if existing_file_size > 0 and self.skip_existing:
             headers['Range'] = f"bytes={existing_file_size}-"
-            self.log_signal.emit(f"⚙️ ဒေါင်းလက်စဖိုင် တွေ့ရှိသဖြင့် {existing_file_size / (1024*1024):.2f} MB မှ ဆက်လက်ဒေါင်းလုဒ်လုပ်နေသည်...")
 
-        self.log_signal.emit(f"📥 Downloading: {filename}...")
-        self.status_signal.emit(f"📥 Downloading: {filename}...")
+        self.status_signal.emit(self.target_name, f"📥 Downloading: {filename}...")
         
-        # Session ကို အသုံးပြု၍ System Proxy ပါဝင်သော HTTP Request ပို့
-        response = self.session.get(url, headers=headers, stream=True)
+        try:
+            response = self.session.get(url, headers=headers, stream=True, timeout=10)
+        except Exception as e:
+            if not self._is_running:
+                return None
+            raise Exception(f"Network error: {str(e)}")
         
-        # 206 Partial Content ဆိုရင် အောင်မြင်စွာ ဆက်ဒေါင်းနိုင်ခြင်းဖြစ်ပြီး 200 ဆိုရင် အစကပြန်ဒေါင်းမယ်
-        status_code = getattr(response, 'status_code', None) or getattr(response, 'status_color_code', 200)
+        status_code = getattr(response, 'status_code', 200)
         if status_code == 206:
             total_size = int(response.headers.get('content-length', 0)) + existing_file_size
             downloaded = existing_file_size
@@ -151,43 +156,43 @@ class DownloadWorker(QThread):
             existing_file_size = 0
 
         start_time = time.time()
-        write_mode = 'ab' if existing_file_size > 0 else 'wb'
+        write_mode = 'ab' if (existing_file_size > 0 and self.skip_existing) else 'wb'
         
-        with open(path, write_mode) as f:
-            for chunk in response.iter_content(chunk_size=65536): # 64KB chunks
-                if not self._is_running:
-                    break
-                
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    
-                    if total_size > 0:
-                        percent = int((downloaded / total_size) * 100)
-                        self.progress_signal.emit(percent)
-                        
-                        elapsed_time = time.time() - start_time
-                        actual_downloaded = downloaded - existing_file_size
-                        speed = (actual_downloaded / elapsed_time / (1024 * 1024)) if elapsed_time > 0 else 0
+        try:
+            with open(path, write_mode) as f:
+                for chunk in response.iter_content(chunk_size=65536):
+                    if not self._is_running:
+                        break
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = int((downloaded / total_size) * 100)
+                            self.progress_signal.emit(self.target_name, percent)
                             
-                        downloaded_mb = downloaded / (1024 * 1024)
-                        total_mb = total_size / (1024 * 1024)
-                        
-                        status_text = f"⚡ {speed:.2f} MB/s  |  📦 {downloaded_mb:.1f} MB / {total_mb:.1f} MB ({percent}%)"
-                        self.status_signal.emit(status_text)
+                            elapsed_time = time.time() - start_time
+                            actual_downloaded = downloaded - existing_file_size
+                            speed = (actual_downloaded / elapsed_time / (1024 * 1024)) if elapsed_time > 0 else 0
+                            downloaded_mb = downloaded / (1024 * 1024)
+                            total_mb = total_size / (1024 * 1024)
+                            
+                            status_text = f"⚡ {speed:.2f} MB/s  |  📦 {downloaded_mb:.1f} MB / {total_mb:.1f} MB ({percent}%)"
+                            self.status_signal.emit(self.target_name, status_text)
+        except Exception as e:
+            if not self._is_running:
+                raise Exception("User stopped the download.")
+            raise e
                         
         if not self._is_running:
             raise Exception("User stopped the download.")
 
-        self.log_signal.emit(f"✅ Download finished: {filename}")
-        self.progress_signal.emit(100)
-        self.status_signal.emit(f"✅ Finished: {filename}")
+        self.progress_signal.emit(self.target_name, 100)
         return path
 
     def get_latest_github_release(self, repo, asset_keyword, reject_keyword=None):
         if not self._is_running: return None
         api_url = f"https://api.github.com/repos/{repo}/releases/latest"
-        response = self.session.get(api_url)
+        response = self.session.get(api_url, timeout=10)
         response.raise_for_status()
         assets = response.json().get('assets', [])
         for asset in assets:
@@ -196,28 +201,37 @@ class DownloadWorker(QThread):
                 if reject_keyword and reject_keyword in name:
                     continue
                 return asset['browser_download_url'], name
-        raise Exception(f"Not found!: 'No binary found {asset_keyword}' in {repo}")
+        raise Exception(f"Not found binary: {asset_keyword}")
 
-    def download_windows(self):
-        # 1. yt-dlp.exe
+    def download_ytdlp(self):
         if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("yt-dlp.exe"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
+        if self.os_type == "windows":
+            if self.skip_existing and self.is_file_valid("yt-dlp.exe"):
+                return
             yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp.exe")
             self.download_file(yt_url, "yt-dlp.exe")
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
+        elif self.os_type == "linux":
+            if self.skip_existing and self.is_file_valid("yt-dlp"):
+                return
+            yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp", reject_keyword=".exe")
+            yt_path = self.download_file(yt_url, "yt-dlp")
+            if yt_path: os.chmod(yt_path, 0o755)
+        elif self.os_type == "darwin":
+            if self.skip_existing and self.is_file_valid("yt-dlp"):
+                return
+            yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp_macos")
+            yt_path = self.download_file(yt_url, "yt-dlp")
+            if yt_path: os.chmod(yt_path, 0o755)
 
-        # 2. ffmpeg & ffprobe 
+    def download_ffmpeg(self):
         if not self._is_running: return
-        has_ffmpeg = self.is_file_valid("ffmpeg.exe")
-        has_ffprobe = self.is_file_valid("ffprobe.exe")
-        
-        if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg.exe နှင့် ffprobe.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
+        if self.os_type == "windows":
+            has_ffmpeg = self.is_file_valid("ffmpeg.exe")
+            has_ffprobe = self.is_file_valid("ffprobe.exe")
+            if self.skip_existing and has_ffmpeg and has_ffprobe:
+                return
             ff_api_url = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"
-            ff_res = self.session.get(ff_api_url)
+            ff_res = self.session.get(ff_api_url, timeout=10)
             ff_res.raise_for_status()
             assets = ff_res.json().get('assets', [])
             
@@ -228,14 +242,12 @@ class DownloadWorker(QThread):
                     ff_url = asset['browser_download_url']
                     ff_name = name
                     break
-                    
             if not ff_url:
-                raise Exception("BtbN Repository တွင် win64-gpl-shared zip ဖိုင် ရှာမတွေ့ပါ။")
+                raise Exception("FFmpeg zip file not found.")
 
             zip_path = self.download_file(ff_url, ff_name)
-            
             if self._is_running and zip_path and os.path.exists(zip_path):
-                self.log_signal.emit("📦 Extracting necessary files...")
+                self.current_file = None  
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                     for file_info in zip_ref.infolist():
                         if "/bin/" in file_info.filename and not file_info.filename.endswith('/'):
@@ -245,333 +257,305 @@ class DownloadWorker(QThread):
                             with zip_ref.open(file_info) as source, open(os.path.join(self.target_dir, filename), "wb") as target:
                                 shutil.copyfileobj(source, target)
                 os.remove(zip_path)
-                self.log_signal.emit("✅ BtbN FFmpeg Shared Binaries (.exe + .dll) Extraction finished...")
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-
-        # 3. deno.exe
-        if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("deno.exe"):
-            self.log_signal.emit("⏩ [Skip] deno.exe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
+            has_ffmpeg = self.is_file_valid("ffmpeg")
+            has_ffprobe = self.is_file_valid("ffprobe")
+            if self.skip_existing and has_ffmpeg and has_ffprobe:
+                return
+            ff_url = "https://ffbinaries.com/api/v1/version/latest"
+            ff_res = self.session.get(ff_url, timeout=10).json()
+            mac_arch = "osx-64"
+            arch_key = 'linux-64' if self.os_type == 'linux' else mac_arch
+            
+            ffmpeg_zip_url = ff_res['bin'][arch_key]['ffmpeg']
+            ff_zip = self.download_file(ffmpeg_zip_url, "ffmpeg.zip")
+            if ff_zip and os.path.exists(ff_zip):
+                with zipfile.ZipFile(ff_zip, 'r') as zip_ref:
+                    zip_ref.extractall(self.target_dir)
+                os.remove(ff_zip)
+            
+            ffprobe_zip_url = ff_res['bin'][arch_key]['ffprobe']
+            fp_zip = self.download_file(ffprobe_zip_url, "ffprobe.zip")
+            if fp_zip and os.path.exists(fp_zip):
+                with zipfile.ZipFile(fp_zip, 'r') as zip_ref:
+                    zip_ref.extractall(self.target_dir)
+                os.remove(fp_zip)
+            
+            if os.path.exists(os.path.join(self.target_dir, "ffmpeg")): os.chmod(os.path.join(self.target_dir, "ffmpeg"), 0o755)
+            if os.path.exists(os.path.join(self.target_dir, "ffprobe")): os.chmod(os.path.join(self.target_dir, "ffprobe"), 0o755)
+
+    def download_deno(self):
+        if not self._is_running: return
+        if self.os_type == "windows":
+            if self.skip_existing and self.is_file_valid("deno.exe"):
+                return
             deno_url, deno_name = self.get_latest_github_release("denoland/deno", "x86_64-pc-windows-msvc.zip")
             deno_zip = self.download_file(deno_url, deno_name)
             if self._is_running and deno_zip and os.path.exists(deno_zip):
-                self.log_signal.emit("📦 Extracting Deno Binary files...")
+                self.current_file = None
                 with zipfile.ZipFile(deno_zip, 'r') as zip_ref:
                     zip_ref.extractall(self.target_dir)
                 os.remove(deno_zip)
-                self.log_signal.emit("✅ Deno Windows binary Extraction finished...")
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-        
-        if self._is_running:
-            self.is_successful = True
-
-    def download_linux(self):
-        # 1. yt-dlp 
-        if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("yt-dlp"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
         else:
-            yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp", reject_keyword=".exe")
-            yt_path = self.download_file(yt_url, "yt-dlp")
-            if self._is_running and yt_path:
-                os.chmod(yt_path, 0o755)
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-
-        # 2. ffmpeg & ffprobe
-        if not self._is_running: return
-        has_ffmpeg = self.is_file_valid("ffmpeg")
-        has_ffprobe = self.is_file_valid("ffprobe")
-        if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
-            ff_url = "https://ffbinaries.com/api/v1/version/latest"
-            ff_res = self.session.get(ff_url).json()
-            
-            # ffmpeg
-            ffmpeg_zip_url = ff_res['bin']['linux-64']['ffmpeg']
-            ff_zip = self.download_file(ffmpeg_zip_url, "ffmpeg-linux.zip")
-            if self._is_running and ff_zip and os.path.exists(ff_zip):
-                with zipfile.ZipFile(ff_zip, 'r') as zip_ref:
-                    zip_ref.extractall(self.target_dir)
-                os.remove(ff_zip)
-
-            # ffprobe
-            if self._is_running:
-                ffprobe_zip_url = ff_res['bin']['linux-64']['ffprobe']
-                fp_zip = self.download_file(ffprobe_zip_url, "ffprobe-linux.zip")
-                if self._is_running and fp_zip and os.path.exists(fp_zip):
-                    with zipfile.ZipFile(fp_zip, 'r') as zip_ref:
-                        zip_ref.extractall(self.target_dir)
-                    os.remove(fp_zip)
-
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-        if self._is_running:
-            if os.path.exists(os.path.join(self.target_dir, "ffmpeg")): os.chmod(os.path.join(self.target_dir, "ffmpeg"), 0o755)
-            if os.path.exists(os.path.join(self.target_dir, "ffprobe")): os.chmod(os.path.join(self.target_dir, "ffprobe"), 0o755)
-
-        # 3. deno
-        if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("deno"):
-            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
-            deno_url, deno_name = self.get_latest_github_release("denoland/deno", "x86_64-unknown-linux-gnu.zip")
-            deno_zip = self.download_file(deno_url, deno_name)
-            if self._is_running and deno_zip and os.path.exists(deno_zip):
-                with zipfile.ZipFile(deno_zip, 'r') as zip_ref:
-                    zip_ref.extractall(self.target_dir)
-                os.remove(deno_zip)
-                if os.path.exists(os.path.join(self.target_dir, "deno")): os.chmod(os.path.join(self.target_dir, "deno"), 0o755)
-                self.log_signal.emit("✅ Deno Linux binary extraction ပြီးဆုံးပါပြီ။\n")
-
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-        if self._is_running:
-            self.is_successful = True
-
-    def download_mac(self):
-        # 1. yt-dlp (macOS)
-        if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("yt-dlp"):
-            self.log_signal.emit("⏩ [Skip] yt-dlp တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
-            yt_url, yt_name = self.get_latest_github_release("yt-dlp/yt-dlp", "yt-dlp_macos")
-            yt_path = self.download_file(yt_url, "yt-dlp")
-            if self._is_running and yt_path:
-                os.chmod(yt_path, 0o755)
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-
-        # 2. ffmpeg & ffprobe (macOS)
-        if not self._is_running: return
-        has_ffmpeg = self.is_file_valid("ffmpeg")
-        has_ffprobe = self.is_file_valid("ffprobe")
-        if self.skip_existing and has_ffmpeg and has_ffprobe:
-            self.log_signal.emit("⏩ [Skip] ffmpeg နှင့် ffprobe တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
-            ff_url = "https://ffbinaries.com/api/v1/version/latest"
-            ff_res = self.session.get(ff_url).json()
-            
-            mac_arch = "osx-64"
-            if platform.machine() == "arm64":
-                mac_arch = "osx-64"
-
-            # ffmpeg
-            ffmpeg_zip_url = ff_res['bin'][mac_arch]['ffmpeg']
-            ff_zip = self.download_file(ffmpeg_zip_url, "ffmpeg-mac.zip")
-            if self._is_running and ff_zip and os.path.exists(ff_zip):
-                with zipfile.ZipFile(ff_zip, 'r') as zip_ref:
-                    zip_ref.extractall(self.target_dir)
-                os.remove(ff_zip)
-
-            # ffprobe
-            if self._is_running:
-                ffprobe_zip_url = ff_res['bin'][mac_arch]['ffprobe']
-                fp_zip = self.download_file(ffprobe_zip_url, "ffprobe-mac.zip")
-                if self._is_running and fp_zip and os.path.exists(fp_zip):
-                    with zipfile.ZipFile(fp_zip, 'r') as zip_ref:
-                        zip_ref.extractall(self.target_dir)
-                    os.remove(fp_zip)
-
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-        if self._is_running:
-            if os.path.exists(os.path.join(self.target_dir, "ffmpeg")): os.chmod(os.path.join(self.target_dir, "ffmpeg"), 0o755)
-            if os.path.exists(os.path.join(self.target_dir, "ffprobe")): os.chmod(os.path.join(self.target_dir, "ffprobe"), 0o755)
-
-        # 3. deno (macOS)
-        if not self._is_running: return
-        if self.skip_existing and self.is_file_valid("deno"):
-            self.log_signal.emit("⏩ [Skip] deno တွေ့ရှိပြီးဖြစ်သဖြင့် ဒေါင်းလုဒ်မဆွဲတော့ပဲ ကျော်လိုက်ပါပြီ။")
-        else:
-            deno_target = "aarch64-apple-darwin.zip" if platform.machine() == "arm64" else "x86_64-apple-darwin.zip"
+            if self.skip_existing and self.is_file_valid("deno"):
+                return
+            deno_target = "aarch64-apple-darwin.zip" if (self.os_type == "darwin" and platform.machine() == "arm64") else ("x86_64-apple-darwin.zip" if self.os_type == "darwin" else "x86_64-unknown-linux-gnu.zip")
             deno_url, deno_name = self.get_latest_github_release("denoland/deno", deno_target)
             deno_zip = self.download_file(deno_url, deno_name)
             if self._is_running and deno_zip and os.path.exists(deno_zip):
+                self.current_file = None
                 with zipfile.ZipFile(deno_zip, 'r') as zip_ref:
                     zip_ref.extractall(self.target_dir)
                 os.remove(deno_zip)
                 if os.path.exists(os.path.join(self.target_dir, "deno")): os.chmod(os.path.join(self.target_dir, "deno"), 0o755)
-                self.log_signal.emit("✅ Deno macOS binary extraction ပြီးဆုံးပါပြီ။\n")
 
-        self.log_signal.emit('------------------------------------------------------------------------------------------\n')
-        if self._is_running:
-            self.is_successful = True
 
-class MainWindow(QMainWindow):
-    download_status_signal = Signal(bool)
-
+# ═══════════════════════════════════════════════════════════════════
+# 🖥️ MAIN WINDOW
+# ═══════════════════════════════════════════════════════════════════
+class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-
+        
+        # Window Flags နှင့် Size သတ်မှတ်ခြင်း
         self.setWindowFlags(
             Qt.Window | 
             Qt.CustomizeWindowHint | 
             Qt.WindowTitleHint | 
             Qt.WindowCloseButtonHint
         )
-        self.setWindowTitle("Dependencies Downloader")
-        self.setFixedSize(600, 510)
-
-        # Global Fonts Settings
-        self.main_font = QFont("Pyidaungsu", 11)
-        self.log_font = QFont("Pyidaungsu", 10)
-        self.status_font = QFont("Pyidaungsu", 10, QFont.Bold)
-
-        # UI Elements
-        self.label = QLabel("Click Start Download button to download dependencies..")
-        self.label.setFont(self.main_font)
+        self.setWindowTitle("⬇️  Dependencies Downloader")
+        self.setFixedSize(640, 560)
         
-        # ✨ Skip Existing Checkbox
-        self.chk_skip_existing = QCheckBox("Skip already downloaded / existing files")
-        self.chk_skip_existing.setFont(QFont("Pyidaungsu", 10))
-        self.chk_skip_existing.setChecked(True)  # Default checked အဖြစ်ထားရှိပေးထားပါသည်
-
-        # Buttons Layout
-        self.btn_layout = QHBoxLayout()
+        self.setupUi(self)
         
-        self.btn_download = QPushButton("Start Download")
-        self.btn_download.setFont(QFont("Pyidaungsu", 10))
-        self.btn_download.setFixedHeight(40)
-        
-        self.btn_stop = QPushButton("Stop Download")
-        self.btn_stop.setFont(QFont("Pyidaungsu", 10))
-        self.btn_stop.setFixedHeight(40)
-        self.btn_stop.setEnabled(False)
-        
-        self.btn_layout.addWidget(self.btn_download)
-        self.btn_layout.addWidget(self.btn_stop)
+        # သီးသန့် Worker Dictionary (Parallel Downloads အတွက်)
+        self.workers = {
+            "ytdlp": None,
+            "ffmpeg": None,
+            "deno": None
+        }
+        self.is_download_all_active = False
+        self.queue_list = []
 
-        self.log_view = QTextEdit()
-        self.log_view.setReadOnly(True)
-        self.log_view.setFont(self.log_font)
+        # --- StyleSheet ထဲတွင် Disabled နှင့် Stop Download အတွက် Style များ ထည့်သွင်းခြင်း ---
+        existing_style = self.styleSheet()
+        extra_styles = """
+            QPushButton:disabled {
+                background-color: #151b28;
+                border: 1px solid #1e293b;
+                color: #475569;
+            }
+            QPushButton#btnFfmpegDownload:disabled, 
+            QPushButton#btnDenoDownload:disabled, 
+            QPushButton#btnYtDlpDownload:disabled, 
+            QPushButton#downloadAllButton:disabled {
+                background-color: #182030;
+                border: 1px solid #222e45;
+                color: #64748b;
+            }
+            QPushButton#downloadAllButton[is_stop="true"] {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #dc2626, stop:1 #b91c1c);
+                border: 1px solid #ef4444;
+            }
+            QPushButton#downloadAllButton[is_stop="true"]:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ef4444, stop:1 #dc2626);
+            }
+        """
+        self.setStyleSheet(existing_style + extra_styles)
 
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setAlignment(Qt.AlignCenter)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(True)
-        
-        self.lbl_status = QLabel("Ready to download Dependencies...")
-        self.lbl_status.setFont(self.status_font)
-        self.lbl_status.setStyleSheet("color: #2980b9;")
+        # --- Signals ချိတ်ဆက်ခြင်း ---
+        self.btnYtDlpDownload.clicked.connect(lambda: self.start_single_download("ytdlp"))
+        self.btnYtDlpCancel.clicked.connect(lambda: self.stop_single_download("ytdlp"))
 
-        # Main Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        layout.addWidget(self.chk_skip_existing)  # Layout ထဲ Checkbox ထည့်ခြင်း
-        layout.addLayout(self.btn_layout)
-        layout.addWidget(self.log_view)
-        layout.addWidget(self.progress_bar)
-        layout.addWidget(self.lbl_status)
+        self.btnFfmpegDownload.clicked.connect(lambda: self.start_single_download("ffmpeg"))
+        self.btnFfmpegCancel.clicked.connect(lambda: self.stop_single_download("ffmpeg"))
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        self.btnDenoDownload.clicked.connect(lambda: self.start_single_download("deno"))
+        self.btnDenoCancel.clicked.connect(lambda: self.stop_single_download("deno"))
 
-        self.btn_download.clicked.connect(self.start_download)
-        self.btn_stop.clicked.connect(self.stop_download)
-        
-        self.worker = None
-        
-        # ✨ Main GUI ရဲ့ Center တည့်တည့်သို့ ရောက်ရှိစေရန် တွက်ချက်ခြင်း
+        self.downloadAllButton.clicked.connect(self.toggle_download_all)
+
+        # မိခင်ဝင်းဒိုး၏ အလယ်တည့်တည့်တွင် ပေါ်စေရန်
         if parent:
             self.center_on_parent(parent)
 
     def center_on_parent(self, parent):
-        """Parent Window ရဲ့ Center တည့်တည့်သို့ ရောက်အောင် နေရာချပေးသည့် Function"""
         parent_geo = parent.geometry()
         x = parent_geo.x() + (parent_geo.width() - self.width()) // 2
         y = parent_geo.y() + (parent_geo.height() - self.height()) // 2
         self.move(x, y)
 
-    def closeEvent(self, event):
-        if not self.btn_download.isEnabled():
-            self.log_view.append("\n⚠️ Downloading in progress. Please stop the download before closing.")
-            event.ignore()
-            return
+    def check_buttons_state(self):
+        """Single သို့မဟုတ် All တစ်ခုခု အလုပ်လုပ်နေပါက ဆန့်ကျင်ဘက် ခလုတ်များကို Disable လုပ်ပေးခြင်း"""
+        any_single_running = any(w and w.isRunning() for w in self.workers.values())
+        
+        if any_single_running:
+            self.downloadAllButton.setEnabled(False)
+        elif self.is_download_all_active:
+            self.btnYtDlpDownload.setEnabled(False)
+            self.btnFfmpegDownload.setEnabled(False)
+            self.btnDenoDownload.setEnabled(False)
+        else:
+            self.downloadAllButton.setEnabled(True)
+            self.btnYtDlpDownload.setEnabled(True)
+            self.btnFfmpegDownload.setEnabled(True)
+            self.btnDenoDownload.setEnabled(True)
 
-        if self.worker and self.worker.isRunning():
-            self.log_view.append("\n⚠️ Aborting download...")
-            try:
-                self.worker.log_signal.disconnect(self.update_log)
-            except RuntimeError:
-                pass
-                
-            self.worker.stop()
-            self.worker.wait() 
-            
-        event.accept()
-
-    def start_download(self):
-        self.btn_download.setEnabled(False)
-        self.btn_stop.setEnabled(True)
-        self.chk_skip_existing.setEnabled(False)
-
+    def start_single_download(self, target_name):
         if not os.path.exists(TPT_DIR):
             os.makedirs(TPT_DIR)
 
-        # Skip Checkbox အမှန်ခြစ်မထားပါက ဖိုင်ဟောင်းများကို ဖျက်ပစ်မယ်
+        if self.workers[target_name] and self.workers[target_name].isRunning():
+            return
+
+        if target_name == "ytdlp":
+            self.stackedYtDlp.setCurrentIndex(1)
+            self.labelYtDlpStatus.setText("Status: Downloading yt-dlp...")
+        elif target_name == "ffmpeg":
+            self.stackedFfmpeg.setCurrentIndex(1)
+            self.labelFfmpegStatus.setText("Status: Downloading FFmpeg...")
+        elif target_name == "deno":
+            self.stackedDeno.setCurrentIndex(1)
+            self.labelDenoStatus.setText("Status: Downloading Deno...")
+
         skip_existing = self.chk_skip_existing.isChecked()
-        if not skip_existing:
-            for item in os.listdir(TPT_DIR):
-                item_path = os.path.join(TPT_DIR, item)
-                try:
-                    if os.path.isfile(item_path) or os.path.islink(item_path):
-                        os.remove(item_path)
-                    elif os.path.isdir(item_path):
-                        shutil.rmtree(item_path)
-                except Exception as e:
-                    print(f"File cleanup error: {e}")
+        worker = DownloadWorker(TPT_DIR, target_name, skip_existing=skip_existing)
+        worker.progress_signal.connect(self.update_progress)
+        worker.status_signal.connect(self.update_status)
+        worker.finished_signal.connect(self.download_finished)
+        self.workers[target_name] = worker
+        worker.start()
 
-        # UI Reset
-        self.log_view.clear()
-        self.log_view.append("▶️ Starting download process...")
-        self.update_status("▶️ Starting download process...")
-        self.progress_bar.setValue(0)
+        self.check_buttons_state()
+
+    def stop_single_download(self, target_name):
+        worker = self.workers.get(target_name)
+        if worker and worker.isRunning():
+            worker.stop()
+            worker.wait()
+
+        if target_name == "ytdlp":
+            self.stackedYtDlp.setCurrentIndex(0)
+            self.labelYtDlpStatus.setText("Status: Ready to Download")
+            self.progressBarYtDlp.setValue(0)
+        elif target_name == "ffmpeg":
+            self.stackedFfmpeg.setCurrentIndex(0)
+            self.labelFfmpegStatus.setText("Status: Ready to Download")
+            self.progressBarFfmpeg.setValue(0)
+        elif target_name == "deno":
+            self.stackedDeno.setCurrentIndex(0)
+            self.labelDenoStatus.setText("Status: Ready to Download")
+            self.progressBarDeno.setValue(0)
+
+        self.check_buttons_state()
+
+    def toggle_download_all(self):
+        if self.is_download_all_active:
+            self.stop_all_active_downloads()
+        else:
+            if not os.path.exists(TPT_DIR):
+                os.makedirs(TPT_DIR)
+
+            # Progressbar များကို ပြန်လျှော့
+            self.progressBarYtDlp.setValue(0)
+            self.progressBarFfmpeg.setValue(0)
+            self.progressBarDeno.setValue(0)
+
+            self.is_download_all_active = True
+            self.queue_list = ["ytdlp", "ffmpeg", "deno"]
+            self.check_buttons_state()
+            
+            self.downloadAllButton.setText("Stop Download")
+            self.downloadAllButton.setProperty("is_stop", True)
+            self.downloadAllButton.style().unpolish(self.downloadAllButton)
+            self.downloadAllButton.style().polish(self.downloadAllButton)
+            
+            self.process_next_in_queue()
+
+    def process_next_in_queue(self):
+        if not self.queue_list or not self.is_download_all_active:
+            self.stop_all_active_downloads()
+            return
+
+        next_target = self.queue_list.pop(0)
+
+        if next_target == "ytdlp":
+            self.stackedYtDlp.setCurrentIndex(1)
+            self.labelYtDlpStatus.setText("Status: Downloading yt-dlp...")
+        elif next_target == "ffmpeg":
+            self.stackedFfmpeg.setCurrentIndex(1)
+            self.labelFfmpegStatus.setText("Status: Downloading FFmpeg...")
+        elif next_target == "deno":
+            self.stackedDeno.setCurrentIndex(1)
+            self.labelDenoStatus.setText("Status: Downloading Deno...")
+
+        self.downloadAllButton.setText("Stop Download")
+        self.downloadAllButton.setProperty("is_stop", True)
+        self.downloadAllButton.style().unpolish(self.downloadAllButton)
+        self.downloadAllButton.style().polish(self.downloadAllButton)
         
-        target_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), TPT_DIR)
+        skip_existing = self.chk_skip_existing.isChecked()
+        worker = DownloadWorker(TPT_DIR, next_target, skip_existing=skip_existing)
+        worker.progress_signal.connect(self.update_progress)
+        worker.status_signal.connect(self.update_status)
+        worker.finished_signal.connect(self.download_finished)
+        self.workers[next_target] = worker
+        worker.start()
+
+    def stop_all_active_downloads(self):
+        self.is_download_all_active = False
+        self.queue_list = []
+
+        for name, worker in self.workers.items():
+            if worker and worker.isRunning():
+                worker.stop()
+                worker.wait()
+
+        self.stackedYtDlp.setCurrentIndex(0)
+        self.stackedFfmpeg.setCurrentIndex(0)
+        self.stackedDeno.setCurrentIndex(0)
+
+        self.labelYtDlpStatus.setText("Status: Ready to Download")
+        self.labelFfmpegStatus.setText("Status: Ready to Download")
+        self.labelDenoStatus.setText("Status: Ready to Download")
+
+        # self.progressBarYtDlp.setValue(0)
+        # self.progressBarFfmpeg.setValue(0)
+        # self.progressBarDeno.setValue(0)
+
+        self.downloadAllButton.setText("Download All")
+        self.downloadAllButton.setProperty("is_stop", False)
+        self.downloadAllButton.style().unpolish(self.downloadAllButton)
+        self.downloadAllButton.style().polish(self.downloadAllButton)
         
-        # Worker သို့ Skip Flag ပေးပို့ခြင်း
-        self.worker = DownloadWorker(target_directory, skip_existing=skip_existing)
-        
-        self.worker.log_signal.connect(self.update_log)
-        self.worker.progress_signal.connect(self.update_progress)
-        self.worker.status_signal.connect(self.update_status)
-        self.worker.finished_signal.connect(self.download_finished)
-        
-        self.worker.start()
+        self.check_buttons_state()
 
-    def stop_download(self):
-        if self.worker and self.worker.isRunning():
-            self.log_view.append("\n🛑 Trying to stop download... Please wait...")
-            self.update_status("🛑 Trying to stop download... Please wait...")
+    @Slot(str, int)
+    def update_progress(self, target_name, value):
+        if target_name == "ytdlp":
+            self.progressBarYtDlp.setValue(value)
+        elif target_name == "ffmpeg":
+            self.progressBarFfmpeg.setValue(value)
+        elif target_name == "deno":
+            self.progressBarDeno.setValue(value)
 
-            try:
-                self.worker.log_signal.disconnect(self.update_log)
-            except RuntimeError:
-                pass
-
-            self.worker.stop()
-            self.btn_stop.setEnabled(False)
-
-    @Slot(str)
-    def update_log(self, text):
-        self.log_view.append(text)
-
-    @Slot(int)
-    def update_progress(self, value):
-        self.progress_bar.setValue(value)
-
-    @Slot(str)
-    def update_status(self, text):
-        self.lbl_status.setText(text)
+    @Slot(str, str)
+    def update_status(self, target_name, text):
+        if target_name == "ytdlp":
+            self.labelYtDlpStatus.setText(text)
+        elif target_name == "ffmpeg":
+            self.labelFfmpegStatus.setText(text)
+        elif target_name == "deno":
+            self.labelDenoStatus.setText(text)
 
     def start_close_countdown(self, seconds=5):
         self.remaining_seconds = seconds
 
         def update_countdown():
             if self.remaining_seconds > 0:
-                self.lbl_status.setText(
-                    f"🎉 Completed: All necessary dependencies were downloaded successfully.\n"
-                    f"(Window will close in {self.remaining_seconds} sec.)"
-                )
+                # ✨ ခလုတ်ရဲ့ စာသားကို countdown ပုံစံ ပြောင်းလဲခြင်း
+                self.downloadAllButton.setText(f"Will close in {self.remaining_seconds}...")
                 self.remaining_seconds -= 1
             else:
                 self.close_timer.stop()
@@ -582,22 +566,95 @@ class MainWindow(QMainWindow):
         self.close_timer.start(1000)
         update_countdown()
 
-    @Slot()
-    def download_finished(self):
-        self.btn_download.setEnabled(True)
-        self.btn_stop.setEnabled(False)
-        self.chk_skip_existing.setEnabled(True)
-        
-        if self.worker and self.worker.is_successful:
-            self.log_view.append("🎉 All necessary dependencies were downloaded successfully.")
-            self.progress_bar.setValue(100)
-            self.download_status_signal.emit(True)
-            self.start_close_countdown(5)
-        else:
-            if self.worker and not self.worker._is_running:
-                self.lbl_status.setText("🛑 Download stopped.")
-                self.log_view.append("🛑 Download was stopped...")
+    @Slot(str, bool)
+    def download_finished_BAK(self, target_name, is_success):
+        if target_name == "ytdlp":
+            self.stackedYtDlp.setCurrentIndex(0)
+            if is_success:
+                self.labelYtDlpStatus.setText("Status: Downloaded")
+                self.progressBarYtDlp.setValue(100)
             else:
-                self.lbl_status.setText("❌ Download unsuccessful. Try again...")
-            
-            self.download_status_signal.emit(False)
+                self.labelYtDlpStatus.setText("Status: Ready to Download")
+
+        elif target_name == "ffmpeg":
+            self.stackedFfmpeg.setCurrentIndex(0)
+            if is_success:
+                self.labelFfmpegStatus.setText("Status: Downloaded")
+                self.progressBarFfmpeg.setValue(100)
+            else:
+                self.labelFfmpegStatus.setText("Status: Ready to Download")
+
+        elif target_name == "deno":
+            self.stackedDeno.setCurrentIndex(0)
+            if is_success:
+                self.labelDenoStatus.setText("Status: Downloaded")
+                self.progressBarDeno.setValue(100)
+            else:
+                self.labelDenoStatus.setText("Status: Ready to Download")
+
+        if self.is_download_all_active and is_success and self.queue_list:
+            self.process_next_in_queue()
+        else:
+            if not self.is_download_all_active:
+                self.check_buttons_state()
+            else:
+                self.stop_all_active_downloads()
+
+    @Slot(str, bool)
+    def download_finished(self, target_name, is_success):
+        if target_name == "ytdlp":
+            self.stackedYtDlp.setCurrentIndex(0)
+            if is_success:
+                self.labelYtDlpStatus.setText("Status: Downloaded")
+                self.progressBarYtDlp.setValue(100)
+            else:
+                self.labelYtDlpStatus.setText("Status: Ready to Download")
+                self.progressBarYtDlp.setValue(0)
+
+        elif target_name == "ffmpeg":
+            self.stackedFfmpeg.setCurrentIndex(0)
+            if is_success:
+                self.labelFfmpegStatus.setText("Status: Downloaded")
+                self.progressBarFfmpeg.setValue(100)
+            else:
+                self.labelFfmpegStatus.setText("Status: Ready to Download")
+                self.progressBarFfmpeg.setValue(0)
+
+        elif target_name == "deno":
+            self.stackedDeno.setCurrentIndex(0)
+            if is_success:
+                self.labelDenoStatus.setText("Status: Downloaded")
+                self.progressBarDeno.setValue(100)
+            else:
+                self.labelDenoStatus.setText("Status: Ready to Download")
+                self.progressBarDeno.setValue(0)
+
+        # ✨ Download All (Queue) လုပ်နေစဉ် ဆက်လုပ်စရာ ကျန်သေးလား စစ်ဆေးခြင်း
+        if self.is_download_all_active and is_success and self.queue_list:
+            self.process_next_in_queue()
+        else:
+            if not self.is_download_all_active:
+                self.check_buttons_state()
+            else:
+                # 🛑 Download All ပြီးဆုံးသွားပြီ (သို့မဟုတ် queue ပြီးသွားပြီ)
+                self.is_download_all_active = False
+                self.queue_list = []
+
+                for name, worker in self.workers.items():
+                    if worker and worker.isRunning():
+                        worker.stop()
+                        worker.wait()
+
+                self.stackedYtDlp.setCurrentIndex(0)
+                self.stackedFfmpeg.setCurrentIndex(0)
+                self.stackedDeno.setCurrentIndex(0)
+
+                # ✨ Download All အားလုံး ပြီးသွားပါက ခလုတ်ကို Disable လုပ်ပြီး Countdown စတင်မည်
+                self.downloadAllButton.setEnabled(False)
+                self.start_close_countdown(5)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())

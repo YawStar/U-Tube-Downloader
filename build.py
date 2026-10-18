@@ -18,21 +18,32 @@ APP_NAME = "YawStar U-Tube Downloader"
 APP_NAME_SAFE = "YawStar-U-Tube-Downloader"  # ဖိုင်အမည်အတွက် space မပါသော version
 BUNDLE_ID = "com.yawstar.utube.downloader"
 
-# Linux အတွက် Architecture အမည် သတ်မှတ်ခြင်း (amd64, arm64, x32)
-if not IS_WINDOWS:
+# OS အလိုက် Architecture အမည် သတ်မှတ်ခြင်း
+if IS_WINDOWS:
+    # Windows convention: x86, amd64, ARM64
+    if MACHINE in ("amd64", "x86_64"):
+        arch_name = "amd64"
+    elif MACHINE in ("arm64", "aarch64"):
+        arch_name = "arm64"
+    elif MACHINE in ("x86", "i386", "i686"):
+        arch_name = "x86"      # ← Windows မှာ x86 လို့သတ်မှတ်
+    else:
+        arch_name = MACHINE
+else:
+    # Linux/macOS convention: x32, amd64, arm64
     if MACHINE in ("x86_64", "amd64"):
         arch_name = "amd64"
     elif MACHINE in ("aarch64", "arm64"):
         arch_name = "arm64"
     elif MACHINE in ("i386", "i686", "x86"):
-        arch_name = "x32"
+        arch_name = "x32"      # ← Linux မှာ x32 လို့သတ်မှတ်
     else:
         arch_name = MACHINE
 
 # OS ပေါ်မူတည်၍ Output Folder ခွဲခြားခြင်း
 # (Windows အတွက် dist/Windows ၊ Linux အတွက် dist/Linux/{arch} ၊ macOS အတွက် dist/macOS/{arch})
 RELEASED_DIR = (
-    BASE_DIR / "dist" / "Windows"
+    BASE_DIR / "dist" / "Windows" / arch_name
     if IS_WINDOWS
     else BASE_DIR / "dist" / "macOS" / arch_name
     if IS_MACOS
@@ -111,6 +122,32 @@ def build_app():
     print("Running:", " ".join(str(c) for c in cmd))
     subprocess.run(cmd, check=True)
 
+def copy_files():
+    """Windows build ပြီးနောက် လိုအပ်သော ဖိုင်များကို App folder ထဲ ကူးခြင်း"""
+    app_folder = RELEASED_DIR / APP_NAME
+    
+    if not app_folder.exists():
+        print(f"⚠️  App folder မတွေ့ပါ: {app_folder}")
+        return
+    
+    # (source_folder, filename) အတွဲလိုက်
+    files_to_copy = [
+        (BASE_DIR,               "Changelog.txt"),
+        (BASE_DIR,               "LICENSE"),
+        (BASE_DIR / "dist" / "Windows",  "YawStar.URL"),
+        (BASE_DIR / "dist" / "Windows",  "License Agreement.txt"),
+    ]
+    
+    for source_folder, filename in files_to_copy:
+        src = source_folder / filename
+        dst = app_folder / filename
+        
+        if not src.exists():
+            print(f"⚠️  Source ဖိုင် မတွေ့ပါ: {src}")
+            continue
+        
+        shutil.copy2(src, dst)
+        print(f"✅ Copy ကူးပြီး: {filename} → {app_folder}")
 
 def create_dmg_macos():
     """macOS အတွက် .dmg ဖိုင် ဖန်တီးခြင်း (create-dmg လိုအပ်သည်)"""
@@ -172,6 +209,10 @@ def create_dmg_macos():
 
 if __name__ == "__main__":
     build_app()
+
+    # Windows ဆိုရင် လိုတဲ့ ဖိုင်တွေကူး
+    if IS_WINDOWS:
+        copy_files()
 
     # macOS ဆိုရင် .app ပြီးတာနဲ့ .dmg ကို ဆက်ထုတ်
     if IS_MACOS:

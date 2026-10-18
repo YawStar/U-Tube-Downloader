@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QCoreApplication, QFile, QStandardPaths, QThread, QUrl, Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices
-
 import urllib.request
 import json
 
@@ -61,6 +60,68 @@ logger = get_logger(__name__)
 # POT Server Services
 from utils.pot_server import POTServerThread
 
+# ============================================================================
+# GitHub Release Fetcher Thread (POT Server & Plugin အတွက် နောက်ဆုံး Version ရှာရန်)
+# ============================================================================
+class GitHubReleaseFetcherThread(QThread):
+  release_fetched = Signal(str, str, str)  # latest_version, server_download_url, plugin_download_url
+  fetch_failed = Signal(str)
+
+  def __init__(self, owner: str, repo: str, parent=None):
+    super().__init__(parent)
+    self.api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+
+  def run(self):
+    try:
+      req = urllib.request.Request(
+          self.api_url,
+          headers={
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+              'Accept': 'application/vnd.github.v3+json',
+          },
+      )
+      with urllib.request.urlopen(req, timeout=10) as response:
+        if response.status == 200:
+          data = json.loads(response.read().decode('utf-8'))
+          latest_version = data.get("tag_name", "v0.1.0")
+
+          server_url = ""
+          plugin_url = ""
+
+          assets = data.get("assets", [])
+          for asset in assets:
+            asset_name = asset.get("name", "").lower()
+            download_url = asset.get("browser_download_url", "")
+
+            # OS အလိုက် POT Server binary ကို ရှာခြင်း
+            if IS_WINDOWS and "windows-amd64.exe" in asset_name:
+              server_url = download_url
+            elif IS_LINUX and "linux-amd64" in asset_name:
+              server_url = download_url
+            elif IS_MACOS and "darwin-amd64" in asset_name:
+              server_url = download_url
+
+            # Plugin zip ဖိုင်ကို ရှာခြင်း
+            if "yawstar-ytdlp-pot-provider.zip" in asset_name:
+              plugin_url = download_url
+
+          # Assets ထဲမှာ မတွေ့ရင် fallback URL သုံးရန်
+          if not server_url:
+            if IS_WINDOWS:
+              server_url = f"https://github.com/YawStar/ytdlp-pot-provider/releases/download/{latest_version}/yawstar-pot-server-windows-amd64.exe"
+            elif IS_LINUX:
+              server_url = f"https://github.com/YawStar/ytdlp-pot-provider/releases/download/{latest_version}/yawstar-pot-server-linux-amd64"
+            elif IS_MACOS:
+              server_url = f"https://github.com/YawStar/ytdlp-pot-provider/releases/download/{latest_version}/yawstar-pot-server-darwin-amd64"
+
+          if not plugin_url:
+            plugin_url = f"https://github.com/YawStar/ytdlp-pot-provider/releases/download/{latest_version}/yawstar-ytdlp-pot-provider.zip"
+
+          self.release_fetched.emit(latest_version, server_url, plugin_url)
+        else:
+          self.fetch_failed.emit(f"GitHub API Error: HTTP {response.status}")
+    except Exception as e:
+      self.fetch_failed.emit(str(e))
 
 # ============================================================================
 # Stop Server Worker
@@ -942,7 +1003,6 @@ class SettingsDialog(QDialog):
         self.ui.chk_enable_pot_server.setChecked(bool(enable_pot_server))
 
         self.refresh_POT_Server_Page()
-        self.refresh_POT_Server_Status()
 
     def on_browse_clicked(self):
         current_path = self.ui.inp_dowload_path.text()
@@ -1146,34 +1206,29 @@ class SettingsDialog(QDialog):
         # Server install state
         ys_pot_server_bin = os.path.join(TPT_DIR, SVR_EXE_NAME)
         server_installed = os.path.exists(ys_pot_server_bin)
-
         if server_installed:
             self.ui.lbl_pot_server_info_val.setText("✅ Installed")
             self.ui.lbl_pot_server_info_val.setStyleSheet("color: #2ECC71;")
+            self.ui.btn_download_pot_server.setText("Uninstall POT Server")
         else:
             self.ui.lbl_pot_server_info_val.setText("❌ Not Installed")
             self.ui.lbl_pot_server_info_val.setStyleSheet("color: #F39C12;")
+            self.ui.btn_download_pot_server.setText("Download POT Server")
 
         # Plugin install state
         plugin_zip = os.path.join(TPT_DIR, "yt-dlp-plugins", "yawstar-ytdlp-pot-provider.zip")
         plugin_installed = os.path.exists(plugin_zip)
-
         if plugin_installed:
             self.ui.lbl_bgutil_plugin_val.setText("✅ Installed")
             self.ui.lbl_bgutil_plugin_val.setStyleSheet("color: #2ECC71;")
+            self.ui.btn_download_plugin.setText("Uninstall Plugin")
         else:
-            self.ui.lbl_bgutil_plugin_val.setText("❌ Not Found")
+            self.ui.lbl_bgutil_plugin_val.setText("❌ Not Installed")
             self.ui.lbl_bgutil_plugin_val.setStyleSheet("color: #F39C12;")
+            self.ui.btn_download_plugin.setText("Download Plugin")
 
-        # Buttons
-        self.ui.btn_toggle_pot_server.setEnabled(is_checked and server_installed)
-        self.ui.btn_download_pot_server.setEnabled(is_checked and not server_installed)
-        self.ui.btn_download_plugin.setEnabled(is_checked and not plugin_installed)
-        self.ui.spin_pot_port.setEnabled(False)
 
-    def refresh_POT_Server_Status(self):
         is_pot_server_running = self.pot_mgr.is_server_running()
-
         if is_pot_server_running:
             if hasattr(self.ui, 'lbl_pot_server_status_val'):
                 self.ui.lbl_pot_server_status_val.setText("🟢 Running")
@@ -1188,6 +1243,16 @@ class SettingsDialog(QDialog):
             if hasattr(self.ui, 'btn_toggle_pot_server'):
                 self.ui.btn_toggle_pot_server.setText("Start Server")
                 self.ui.btn_toggle_pot_server.setEnabled(True)
+
+        # Buttons
+        if server_installed:
+            self.ui.btn_toggle_pot_server.setEnabled(True)
+        else:
+            self.ui.btn_toggle_pot_server.setEnabled(False)
+
+        # self.ui.btn_download_pot_server.setEnabled(is_checked and not server_installed)
+        # self.ui.btn_download_plugin.setEnabled(is_checked and not plugin_installed)
+        # self.ui.spin_pot_port.setEnabled(False)
 
     def on_toggle_start_stop_clicked(self):
         """ YawStar ytdlp POT Server ကို စတင်/ရပ်တန့် """
@@ -1224,44 +1289,6 @@ class SettingsDialog(QDialog):
 
             self.pot_mgr.start()
 
-    def on_download_pot_server_clicked(self):
-        if IS_WINDOWS:
-            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-windows-amd64.exe"
-        elif IS_LINUX:
-            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-linux-amd64"
-        elif IS_MACOS:
-            url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-pot-server-darwin-amd64"
-
-        # url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/archive/refs/tags/2.0.0.zip"
-        
-        filePath = os.path.join(TPT_DIR, SVR_EXE_NAME)
-
-        self.ui.txtOutputLog.clear()
-        self.set_ui_busy(True, "Downloading POT Server...", allow_close=True)
-        QApplication.processEvents()
-
-        if hasattr(self.ui, 'btn_download_pot_server'):
-            self.ui.btn_download_pot_server.setEnabled(False)
-            self.ui.btn_download_pot_server.setText("Downloading...")
-            self.ui.lbl_pot_server_info_val.setText("Downloading...")
-            self.ui.lbl_pot_server_info_val.setStyleSheet("color: #f39c12;")
-
-        self.pot_dl_thread = FileDownloaderThread(
-            url=url,
-            save_path=filePath,
-            extract_to=TPT_DIR,
-            is_zip=True,
-            parent=self
-        )
-
-        def _handle_pot_dl_progress(msg: str):
-            logger.info(f"[POT Server DL]: {msg}")
-            self.append_output_log(f"[POT Server DL]: {msg}")
-
-        self.pot_dl_thread.progress_signal.connect(_handle_pot_dl_progress)
-        self.pot_dl_thread.finished_signal.connect(self._on_pot_server_download_finished)
-        self.pot_dl_thread.start()
-
     def _on_pot_server_download_finished(self, success: bool, message: str):
         self.set_ui_busy(False)
 
@@ -1280,38 +1307,6 @@ class SettingsDialog(QDialog):
         else:
             self.append_output_log("[INFO]: POT Server dowload error.")
 
-    def on_download_plugin_clicked(self):
-        # url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/download/2.0.0/bgutil-ytdlp-pot-provider.zip"
-        url = "https://github.com/YawStar/ytdlp-pot-provider/releases/download/v0.1.0/yawstar-ytdlp-pot-provider.zip"
-        plugin_dir = os.path.join(TPT_DIR, "yt-dlp-plugins")
-        plugin_zip_path = os.path.join(plugin_dir, "yawstar-ytdlp-pot-provider.zip")
-
-        self.set_ui_busy(True, "Downloading Plugin...", allow_close=True)
-        QApplication.processEvents()
-
-        self.ui.txtOutputLog.clear()
-
-        if hasattr(self.ui, 'btn_download_plugin'):
-            self.ui.btn_download_plugin.setEnabled(False)
-            self.ui.btn_download_plugin.setText("Downloading...")
-            self.ui.lbl_bgutil_plugin_val.setText("Downloading...")
-            self.ui.lbl_bgutil_plugin_val.setStyleSheet("color: #f39c12;")
-
-        self.plugin_dl_thread = FileDownloaderThread(
-            url=url,
-            save_path=plugin_zip_path,
-            is_zip=False,
-            parent=self
-        )
-
-        def _handle_plugin_dl_progress(msg: str):
-            logger.info(f"[Plugin DL]: {msg}")
-            self.append_output_log(f"[Plugin DL]: {msg}")
-
-        self.plugin_dl_thread.progress_signal.connect(_handle_plugin_dl_progress)
-        self.plugin_dl_thread.finished_signal.connect(self._on_plugin_download_finished)
-        self.plugin_dl_thread.start()
-
     def on_plugin_download_progress(self):
         pass
 
@@ -1327,6 +1322,145 @@ class SettingsDialog(QDialog):
             self.append_output_log("[INFO]: Plugin dowload successful.")
         else:
             self.append_output_log("[INFO]: Plugin download error.")
+
+    def on_download_pot_server_clicked(self):
+      filePath = os.path.join(TPT_DIR, SVR_EXE_NAME)
+      if os.path.exists(filePath):
+        self.ui.txtOutputLog.clear()
+        self.set_ui_busy(True, "Uninstalling POT Server...", allow_close=True)
+        self.append_output_log("Uninstalling POT Server...")
+        try:
+          os.remove(filePath)
+          self.append_output_log("Uninstalling POT Server successful...")
+        except OSError as e:
+          self.append_output_log(f"Uninstalling POT Server failed: {e}")
+        self.set_ui_busy(False)
+        self.refresh_POT_Server_Page()
+        return
+
+      # ဒေါင်းလုပ်မဆွဲခင် နောက်ဆုံး Version ကို GitHub ကနေ အရင် စစ်ယူပါမည်
+      self.ui.txtOutputLog.clear()
+      self.set_ui_busy(True, "Fetching latest version...", allow_close=True)
+      self.append_output_log("Checking latest release for POT Server...")
+      QApplication.processEvents()
+
+      self.release_checker = GitHubReleaseFetcherThread(
+          "YawStar", "ytdlp-pot-provider", parent=self
+      )
+      self.release_checker.release_fetched.connect(
+          self._start_pot_server_download
+      )
+      self.release_checker.fetch_failed.connect(self._on_release_fetch_failed)
+      self.release_checker.start()
+
+    def _start_pot_server_download(
+        self, latest_version: str, server_url: str, plugin_url: str
+    ):
+      filePath = os.path.join(TPT_DIR, SVR_EXE_NAME)
+      self.append_output_log(
+          f"Latest version found: {latest_version}. Downloading from:"
+          f" {server_url}"
+      )
+
+      if hasattr(self.ui, 'btn_download_pot_server'):
+        self.ui.btn_download_pot_server.setEnabled(False)
+        self.ui.btn_download_pot_server.setText("Downloading...")
+        self.ui.lbl_pot_server_info_val.setText("Downloading...")
+        self.ui.lbl_pot_server_info_val.setStyleSheet("color: #f39c12;")
+
+      self.pot_dl_thread = FileDownloaderThread(
+          url=server_url,
+          save_path=filePath,
+          extract_to=TPT_DIR,
+          is_zip=True,
+          parent=self,
+      )
+
+      def _handle_pot_dl_progress(msg: str):
+        logger.info(f"[POT Server DL]: {msg}")
+        self.append_output_log(f"[POT Server DL]: {msg}")
+
+      self.pot_dl_thread.progress_signal.connect(_handle_pot_dl_progress)
+      self.pot_dl_thread.finished_signal.connect(
+          self._on_pot_server_download_finished
+      )
+      self.pot_dl_thread.start()
+
+    def on_download_plugin_clicked(self):
+      plugin_dir = os.path.join(TPT_DIR, "yt-dlp-plugins")
+      plugin_zip_path = os.path.join(
+          plugin_dir, "yawstar-ytdlp-pot-provider.zip"
+      )
+
+      if os.path.exists(plugin_zip_path):
+        self.ui.txtOutputLog.clear()
+        self.set_ui_busy(True, "Uninstalling Plugin...", allow_close=True)
+        self.append_output_log("Uninstalling Plugin...")
+        try:
+          os.remove(plugin_zip_path)
+          self.append_output_log("Uninstalling Plugin successful...")
+        except OSError as e:
+          self.append_output_log(f"Uninstalling Plugin failed: {e}")
+        self.set_ui_busy(False)
+        self.refresh_POT_Server_Page()
+        return
+
+      # ဒေါင်းလုပ်မဆွဲခင် နောက်ဆုံး Version ကို GitHub ကနေ အရင် စစ်ယူပါမည်
+      self.ui.txtOutputLog.clear()
+      self.set_ui_busy(True, "Fetching latest version...", allow_close=True)
+      self.append_output_log("Checking latest release for Plugin...")
+      QApplication.processEvents()
+
+      self.release_checker = GitHubReleaseFetcherThread(
+          "YawStar", "ytdlp-pot-provider", parent=self
+      )
+      self.release_checker.release_fetched.connect(
+          self._start_plugin_download
+      )
+      self.release_checker.fetch_failed.connect(self._on_release_fetch_failed)
+      self.release_checker.start()
+
+    def _start_plugin_download(
+        self, latest_version: str, server_url: str, plugin_url: str
+    ):
+      plugin_dir = os.path.join(TPT_DIR, "yt-dlp-plugins")
+      plugin_zip_path = os.path.join(
+          plugin_dir, "yawstar-ytdlp-pot-provider.zip"
+      )
+      self.append_output_log(
+          f"Latest version found: {latest_version}. Downloading Plugin from:"
+          f" {plugin_url}"
+      )
+
+      if hasattr(self.ui, 'btn_download_plugin'):
+        self.ui.btn_download_plugin.setEnabled(False)
+        self.ui.btn_download_plugin.setText("Downloading...")
+        self.ui.lbl_bgutil_plugin_val.setText("Downloading...")
+        self.ui.lbl_bgutil_plugin_val.setStyleSheet("color: #f39c12;")
+
+      self.plugin_dl_thread = FileDownloaderThread(
+          url=plugin_url, save_path=plugin_zip_path, is_zip=False, parent=self
+      )
+
+      def _handle_plugin_dl_progress(msg: str):
+        logger.info(f"[Plugin DL]: {msg}")
+        self.append_output_log(f"[Plugin DL]: {msg}")
+
+      self.plugin_dl_thread.progress_signal.connect(_handle_plugin_dl_progress)
+      self.plugin_dl_thread.finished_signal.connect(
+          self._on_plugin_download_finished
+      )
+      self.plugin_dl_thread.start()
+
+    def _on_release_fetch_failed(self, error_msg: str):
+      self.set_ui_busy(False)
+      self.refresh_POT_Server_Page()
+      self.append_output_log(f"[Error]: Failed to fetch latest release: {error_msg}")
+      self.show_custom_message(
+          "warning",
+          "Update Check Failed",
+          f"Could not fetch latest release from GitHub:\n{error_msg}",
+      )
 
     def open_link(self, url: str):
         if url:

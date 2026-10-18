@@ -21,10 +21,12 @@
     <file>images/bug_report.svg</file>
     <file>images/chapters.svg</file>
     <file>images/default_thumbnail.png</file>
+    <file>images/deno-light.svg</file>
     <file>images/privacy_thumbnail.png</file>
     <file>images/facebook.svg</file>
     <file>images/download.svg</file>
     <file>images/fetch_Info.svg</file>
+    <file>images/ffmpeg.svg</file>
     <file>images/formats.svg</file>
     <file>images/github.svg</file>
     <file>images/globe.svg</file>
@@ -45,5 +47,6 @@
     <file>images/thumbnail.svg</file>
     <file>images/translate.svg</file>
     <file>images/unavailable_thumbnail.png</file>
+    <file>images/yt-dlp.svg</file>
   </qresource>
 </RCC>

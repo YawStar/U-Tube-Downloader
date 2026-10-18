@@ -323,6 +323,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pycountry"
+version = "26.2.16"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/1d/061b9e7a48b85cfd69f33c33d2ef784a531c359399ad764243399673c8f5/pycountry-26.2.16.tar.gz", hash = "sha256:5b6027d453fcd6060112b951dd010f01f168b51b4bf8a1f1fc8c95c8d94a0801", size = 7711342, upload-time = "2026-02-17T03:42:52.367Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/42/7703bd45b62fecd44cd7d3495423097e2f7d28bc2e99e7c1af68892ab157/pycountry-26.2.16-py3-none-any.whl", hash = "sha256:115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a", size = 8044600, upload-time = "2026-02-17T03:42:49.777Z" },
+]
+
+[[package]]
 name = "pymediainfo"
 version = "7.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -662,6 +671,7 @@ dependencies = [
     { name = "desktop-notifier" },
     { name = "niquests" },
     { name = "psutil" },
+    { name = "pycountry" },
     { name = "pymediainfo" },
     { name = "pyside6" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
@@ -674,6 +684,7 @@ requires-dist = [
     { name = "desktop-notifier", specifier = ">=6.2.0" },
     { name = "niquests", specifier = ">=3.21.1" },
     { name = "psutil", specifier = ">=7.2.2" },
+    { name = "pycountry", specifier = ">=26.2.16" },
     { name = "pymediainfo", specifier = ">=7.0.1" },
     { name = "pyside6", specifier = ">=6.11.2" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=312" },

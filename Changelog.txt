@@ -9,6 +9,7 @@ version 1.0.0.31
 {+} Quick Download Dir ရွေးချယ်နိုင်
 {+} Playlist ကို Download လုပ်နိုင်
 {^} Use Own POT feature
+{^} Added Advaced Sponsor Block Feature
 
 version 1.0.0.30
 {*} QTrayNotification မှ desktop_notifier သို့ပြောင်းလဲ

@@ -177,7 +177,7 @@ class PlaylistDialog(QDialog):
             self.btnAddQueue.setText(f"Start Download ({selected_count})")
         else:
             self.btnAddQueue.setEnabled(False)
-            self.btnAddQueue.setText("Add to Download Queue")
+            self.btnAddQueue.setText("Select Videos to Download")
 
     def accept_selection(self):
         entries = self.playlist_info.get("entries", [])

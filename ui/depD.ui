@@ -1,0 +1,806 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>620</width>
+    <height>449</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>620</width>
+    <height>449</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>620</width>
+    <height>449</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Dependencies Downloader</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QMainWindow {
+        background-color: #0b0f19;
+    }
+    QWidget {
+        color: #ffffff;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    /* Main Card / Container */
+    #centralWidget {
+        background-color: #121824;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+    }
+    /* Item Cards */
+    QFrame.itemCard {
+        background-color: #171f30;
+        border: 1px solid #222e45;
+        border-radius: 8px;
+    }
+    /* Labels */
+    QLabel {
+        color: #f8fafc;
+        background: transparent;
+    }
+    .titleLabel {
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .statusLabel {
+        font-size: 13px;
+        color: #94a3b8;
+    }
+    /* Default Buttons */
+    QPushButton {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 6px 12px;
+        color: #ffffff;
+        font-weight: 500;
+    }
+    QPushButton:hover {
+        background-color: #273548;
+    }
+    /* Primary / Download Buttons */
+    QPushButton#btnFfmpegDownload, QPushButton#btnDenoDownload, QPushButton#btnYtDlpDownload, QPushButton#downloadAllButton {
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1d4ed8, stop:1 #1e40af);
+        border: 1px solid #3b82f6;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+    QPushButton#btnFfmpegDownload:hover, QPushButton#btnDenoDownload:hover, QPushButton#btnYtDlpDownload:hover, QPushButton#downloadAllButton:hover {
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2563eb, stop:1 #1d4ed8);
+    }
+    /* Pause နှင့် Cancel ခလုတ်များ */
+    QPushButton[objectName*=&quot;Pause&quot;], QPushButton[objectName*=&quot;Cancel&quot;] {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 6px 12px;
+        color: #f8fafc;
+        font-weight: 500;
+        min-height: 24px;
+    }
+    QPushButton[objectName*=&quot;Pause&quot;]:hover, QPushButton[objectName*=&quot;Cancel&quot;]:hover {
+        background-color: #334155;
+        border-color: #475569;
+    }
+    /* Progress Bar */
+    QProgressBar {
+        background-color: #0f172a;
+        border: none;
+        border-radius: 4px;
+        height: 6px;
+        text-align: center;
+    }
+    QProgressBar::chunk {
+        background-color: #3b82f6;
+        border-radius: 4px;
+    }
+   </string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>16</number>
+    </property>
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="topMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
+    <property name="bottomMargin">
+     <number>20</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="frameYtDlp">
+      <property name="class" stdset="0">
+       <string>itemCard</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutYtDlp">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutYtDlpTop">
+         <item>
+          <layout class="QHBoxLayout" name="layoutLeftYtDlp">
+           <property name="spacing">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="btnIconYtDlp">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../assets/resources.qrc">
+               <normaloff>:/images/images/yt-dlp.svg</normaloff>:/images/images/yt-dlp.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>25</width>
+               <height>25</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="layoutTextYtDlp">
+             <item>
+              <widget class="QLabel" name="labelYtDlpTitle">
+               <property name="text">
+                <string>yt-dlp</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>titleLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelYtDlpStatus">
+               <property name="text">
+                <string>Status: Ready to Download</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>statusLabel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QStackedWidget" name="stackedYtDlp">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="pageYtDlpReady">
+            <layout class="QHBoxLayout" name="layoutYtDlpReady">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnYtDlpDownload">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Download</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="pageYtDlpDownloading">
+            <layout class="QHBoxLayout" name="layoutYtDlpDownloading">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnYtDlpCancel">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>38</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>❌ Cancel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="progressBarYtDlp">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>5</height>
+          </size>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="textVisible">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frameFfmpeg">
+      <property name="class" stdset="0">
+       <string>itemCard</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutFfmpeg">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutFfmpegTop">
+         <item>
+          <layout class="QHBoxLayout" name="layoutTitleFfmpeg">
+           <property name="spacing">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="btnIconFfmpeg">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../assets/resources.qrc">
+               <normaloff>:/images/images/ffmpeg.svg</normaloff>:/images/images/ffmpeg.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="layoutTextFfmpeg">
+             <item>
+              <widget class="QLabel" name="labelFfmpegTitle">
+               <property name="text">
+                <string>FFmpeg</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>titleLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelFfmpegStatus">
+               <property name="text">
+                <string>Status: Ready to Download</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>statusLabel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QStackedWidget" name="stackedFfmpeg">
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="pageFfmpegReady">
+            <layout class="QHBoxLayout" name="layoutFfmpegReady">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnFfmpegDownload">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Download</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="pageFfmpegDownloading">
+            <layout class="QHBoxLayout" name="layoutFfmpegDownloading">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnFfmpegCancel">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>38</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>❌ Cancel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="progressBarFfmpeg">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>5</height>
+          </size>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="textVisible">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frameDeno">
+      <property name="class" stdset="0">
+       <string>itemCard</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutDeno">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutDenoTop">
+         <item>
+          <layout class="QHBoxLayout" name="layoutLeftDeno">
+           <property name="spacing">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="btnIconDeno">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../assets/resources.qrc">
+               <normaloff>:/images/images/deno-light.svg</normaloff>:/images/images/deno-light.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="layoutTextDeno">
+             <item>
+              <widget class="QLabel" name="labelDenoTitle">
+               <property name="text">
+                <string>Deno</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>titleLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelDenoStatus">
+               <property name="text">
+                <string>Status: Ready to Download</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>statusLabel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QStackedWidget" name="stackedDeno">
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="pageDenoReady">
+            <layout class="QHBoxLayout" name="layoutDenoReady">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnDenoDownload">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>34</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Download</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="pageDenoDownloading">
+            <layout class="QHBoxLayout" name="layoutDenoDownloading">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btnDenoCancel">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>38</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>❌ Cancel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="progressBarDeno">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>5</height>
+          </size>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="textVisible">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="downloadAllButton">
+        <property name="minimumSize">
+         <size>
+          <width>180</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>180</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Download All</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <spacer name="verticalSpacerBottom">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="footerLayout">
+      <item>
+       <layout class="QHBoxLayout" name="footerLeft">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="chk_skip_existing">
+          <property name="font">
+           <font>
+            <family>Segoe UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Skip already downloaded / existing files</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnSettings">
+        <property name="text">
+         <string>⚙ Settings</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../assets/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

@@ -44,7 +44,7 @@ DISPLAY_NAME = "YawStar U-Tube Downloader"
 
 VERSION = "1.0.0.31"
 
-RELEASE_DATE = "15.Oct.2026"
+RELEASE_DATE = "17.Oct.2026"
 
 DEVELOPER = "Yawhackka"
 
@@ -103,7 +103,7 @@ USR_BIN_DIR = APP_DIR / "usr" / "bin"
 # ============================================================
 
 OUTPUT_APPIMAGE = (
-    DIST_DIR / f"{APP_EXECUTABLE}-{VERSION}-{ARCHITECTURE}.AppImage"
+    .. / "Released" / f"{APP_EXECUTABLE}-{VERSION}-{ARCHITECTURE}.AppImage"
 )
 
 
