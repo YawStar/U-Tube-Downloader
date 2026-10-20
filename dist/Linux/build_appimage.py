@@ -17,7 +17,7 @@ Expected structure:
 Output:
 
     ../Released/
-        YawStar_U-Tube_Downloader-1.0.0.30-x86_64.AppImage
+        YawStar_U-Tube_Downloader-1.0.0.31-x86_64.AppImage
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ PACKAGE_NAME = "yawstar-u-tube-downloader"
 
 DISPLAY_NAME = "YawStar U-Tube Downloader"
 
-VERSION = "1.0.0.30"
+VERSION = "1.0.0.31"
 
 RELEASE_DATE = "30.Sept.2026"
 

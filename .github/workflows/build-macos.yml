@@ -9,9 +9,9 @@ jobs:
       fail-fast: false   # တစ်ခု fail ဖြစ်ရင် ကျန်တာ ဆက်လုပ်ရန်
       matrix:
         include:
-          - runner: macos-13   # Intel → amd64
+          - runner: macos-15-intel   # Intel → amd64  (macos-13 အစား)
             arch: amd64
-          - runner: macos-14   # Apple Silicon → arm64
+          - runner: macos-14         # Apple Silicon → arm64
             arch: arm64
     runs-on: ${{ matrix.runner }}
 
