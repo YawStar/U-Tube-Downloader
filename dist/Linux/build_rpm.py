@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# build_rpm.py
 
 """
 Build an RPM package (.rpm) from an existing PyInstaller build using rpmbuild (Native).
@@ -17,7 +18,7 @@ Expected structure:
 
 Output:
 
-    YawStar_U-Tube_Downloader/
+    ../Released/
         yawstar-u-tube-downloader-1.0.0.31.x86_64.rpm
 """
 
@@ -50,7 +51,7 @@ URL = "https://github.com/Yawhackka"
 # ============================================================
 
 PROJECT_DIR = Path(__file__).resolve().parent
-DIST_DIR = PROJECT_DIR / "YawStar_U-Tube_Downloader"
+DIST_DIR = PROJECT_DIR / "amd64" / "YawStar_U-Tube_Downloader"
 EXECUTABLE = DIST_DIR / APP_EXECUTABLE
 INTERNAL_DIR = DIST_DIR / "_internal"
 ICON = PROJECT_DIR / "app_icon.png"
@@ -66,7 +67,7 @@ STAGE_DIR = BUILD_DIR / "stage"
 # FINAL OUTPUT
 # ============================================================
 
-OUTPUT_RPM = DIST_DIR / f"{PACKAGE_NAME}-{VERSION}-{RELEASE}.{ARCHITECTURE}.rpm"
+OUTPUT_RPM = PROJECT_DIR.parent / "Released" / f"{PACKAGE_NAME}-{VERSION}-{RELEASE}.{ARCHITECTURE}.rpm"
 
 # ============================================================
 # TERMINAL COLORS
@@ -206,6 +207,9 @@ StartupNotify=true
 def build_rpm():
     info("Building RPM package with native rpmbuild...")
 
+    # Ensure parent Released directory exists
+    OUTPUT_RPM.parent.mkdir(parents=True, exist_ok=True)
+
     if OUTPUT_RPM.exists():
         OUTPUT_RPM.unlink()
 
@@ -261,8 +265,10 @@ cp -r opt/* %{buildroot}/opt/
 /usr/share/icons/hicolor/256x256/apps/__PACKAGE_NAME__.png
 
 %changelog
-* Wed Oct 14 2026 Yawhackka <support@yawstar> - __VERSION__-__RELEASE__
+- Wed Oct 14 2026 Yawhackka <support@yawstar> - __VERSION__-__RELEASE__
+
 - Automated RPM package build
+
 """
 
     spec_content = (spec_template
@@ -289,7 +295,7 @@ cp -r opt/* %{buildroot}/opt/
     print(f"\n{BOLD}>>> {' '.join(cmd)}{RESET}\n")
     subprocess.run(cmd, check=True)
 
-    # Find generated rpm and move to DIST_DIR
+    # Find generated rpm and move to final output path
     generated_rpms = list(rpmbuild_top.glob(f"RPMS/**/*.rpm"))
     if not generated_rpms:
         raise RuntimeError("rpmbuild completed but .rpm file was not generated.")
@@ -297,7 +303,7 @@ cp -r opt/* %{buildroot}/opt/
     shutil.copy2(generated_rpms[0], OUTPUT_RPM)
 
     if not OUTPUT_RPM.exists():
-        raise RuntimeError("Failed to copy generated RPM to dist directory.")
+        raise RuntimeError("Failed to copy generated RPM to Released directory.")
 
     size = OUTPUT_RPM.stat().st_size / 1024 / 1024
 

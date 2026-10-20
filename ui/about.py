@@ -365,7 +365,7 @@ class AboutDialog(QDialog):
                 current_ver=current_ver,
                 latest_ver=latest_ver,
                 release_notes=notes,
-                download_url=download_url,
+                download_url="https://github.com/YawStar/U-Tube-Downloader/releases", # Not using download_url
                 parent=self
             )
             logger.info(f"Current: {current_ver} | Latest: {latest_ver} | Update Available: {is_available}")
@@ -388,4 +388,4 @@ class AboutDialog(QDialog):
     def open_link(self, url: str):
         """ အထွေထွေ URL များ ပွင့်စေရန် Method """
         if url:
-            QDesktopServices.openUrl(QUrl(url))
+            QDesktopServices.openUrl(QUrl(url))

@@ -3,13 +3,19 @@ __pycache__/
 *.py[oc]
 *.spec
 build/
-dist/Linux/YawStar_U-Tube_Downloader/
-dist/macOS/
-dist/Windows/YawStar U-Tube Downloader/
-dist/Released/
 test/
 wheels/
 *.egg-info
 
 # Virtual environments
 .venv
+
+# --- Dist Folder Configurations ---
+# dist/Windows နဲ့ dist/Linux အောက်က ကျန်တဲ့ ဖိုင်တွေ၊ script တွေကို ထည့်ခွင့်ပေးမယ်
+# ဒါပေမဲ့ amd64 တွေကိုတော့ ပိတ်ထားမယ်
+dist/Windows/amd64/
+dist/Linux/amd64/
+
+# dist/Linux ထဲက အခြား binary များ
+# dist/Linux/appimagetool-x86_64.AppImage
+# dist/Linux/runtime-x86_64

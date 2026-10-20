@@ -24,7 +24,7 @@ The Debian package name uses a valid Debian package name:
 
 Output:
 
-    YawStar_U-Tube_Downloader/
+    ../Released/
         yawstar-u-tube-downloader_1.0.0.31_amd64.deb
 """
 
@@ -78,7 +78,7 @@ DESCRIPTION = "YouTube video downloader"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 
-DIST_DIR = PROJECT_DIR / "YawStar_U-Tube_Downloader"
+DIST_DIR = PROJECT_DIR / "amd64" / "YawStar_U-Tube_Downloader"
 
 # Existing PyInstaller executable.
 EXECUTABLE = (
@@ -157,7 +157,8 @@ ICON_DIR = (
 # ============================================================
 
 OUTPUT_DEB = (
-    DIST_DIR
+    PROJECT_DIR.parent
+    / "Released"
     / (
         f"{PACKAGE_NAME}_"
         f"{VERSION}_"
@@ -730,6 +731,9 @@ def build_deb():
     info(
         "Building Debian package..."
     )
+
+    # Ensure parent Released directory exists
+    OUTPUT_DEB.parent.mkdir(parents=True, exist_ok=True)
 
     if OUTPUT_DEB.exists():
 

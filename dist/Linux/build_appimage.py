@@ -8,7 +8,7 @@ Expected structure:
     my_proj/
     ├── build_appimage.py
     ├── app_icon.png
-    └── YawStar_U-Tube_Downloader/
+    └── dist/
         ├── YawStar_U-Tube_Downloader
         └── _internal/
             ├── ...
@@ -16,8 +16,8 @@ Expected structure:
 
 Output:
 
-    dist/
-        YawStar_U-Tube_Downloader-1.0.0.31-x86_64.AppImage
+    ../Released/
+        YawStar_U-Tube_Downloader-1.0.0.30-x86_64.AppImage
 """
 
 from __future__ import annotations
@@ -42,9 +42,9 @@ PACKAGE_NAME = "yawstar-u-tube-downloader"
 
 DISPLAY_NAME = "YawStar U-Tube Downloader"
 
-VERSION = "1.0.0.31"
+VERSION = "1.0.0.30"
 
-RELEASE_DATE = "17.Oct.2026"
+RELEASE_DATE = "30.Sept.2026"
 
 DEVELOPER = "Yawhackka"
 
@@ -73,7 +73,7 @@ RUNTIME_URL = (
 
 PROJECT_DIR = Path(__file__).resolve().parent
 
-DIST_DIR = PROJECT_DIR / "YawStar_U-Tube_Downloader"
+DIST_DIR = PROJECT_DIR / "amd64" / "YawStar_U-Tube_Downloader"
 
 EXECUTABLE = DIST_DIR / APP_EXECUTABLE
 
@@ -103,7 +103,7 @@ USR_BIN_DIR = APP_DIR / "usr" / "bin"
 # ============================================================
 
 OUTPUT_APPIMAGE = (
-    .. / "Released" / f"{APP_EXECUTABLE}-{VERSION}-{ARCHITECTURE}.AppImage"
+    PROJECT_DIR.parent / "Released" / f"{APP_EXECUTABLE}-{VERSION}-{ARCHITECTURE}.AppImage"
 )
 
 
@@ -192,21 +192,19 @@ def ensure_tools():
         make_executable(APPIMAGETOOL_PATH)
 
     # 2. runtime-x86_64 (Type 2 Standalone Runtime)
-    info("Checking AppImage Type-2 runtime...")
-
-    # ဖိုင်အဟောင်း/ဆွဲလက်စအမှားရှိရင် ဖျက်ပစ်ပြီး အသစ်ဆွဲမည်
-    if RUNTIME_PATH.exists():
-        RUNTIME_PATH.unlink()
-
-    info("Downloading Type-2 runtime-x86_64 (No FUSE required)...")
-    try:
-        urllib.request.urlretrieve(RUNTIME_URL, RUNTIME_PATH)
+    if not RUNTIME_PATH.exists():
+        info("Downloading Type-2 runtime-x86_64 (No FUSE required)...")
+        try:
+            urllib.request.urlretrieve(RUNTIME_URL, RUNTIME_PATH)
+            make_executable(RUNTIME_PATH)
+            success("Downloaded Type-2 runtime-x86_64 successfully.")
+        except Exception as exc:
+            if RUNTIME_PATH.exists():
+                RUNTIME_PATH.unlink()
+            raise RuntimeError(f"Failed to download runtime-x86_64: {exc}")
+    else:
+        success("runtime-x86_64 found.")
         make_executable(RUNTIME_PATH)
-        success("Downloaded Type-2 runtime-x86_64 successfully.")
-    except Exception as exc:
-        if RUNTIME_PATH.exists():
-            RUNTIME_PATH.unlink()
-        raise RuntimeError(f"Failed to download runtime-x86_64: {exc}")
 
 
 # ============================================================
@@ -325,6 +323,9 @@ exec "${{HERE}}/usr/bin/{APP_EXECUTABLE}" "$@"
 
 def build_appimage():
     info("Building AppImage package with Type-2 Runtime...")
+
+    # Ensure parent Released directory exists
+    OUTPUT_APPIMAGE.parent.mkdir(parents=True, exist_ok=True)
 
     if OUTPUT_APPIMAGE.exists():
         OUTPUT_APPIMAGE.unlink()

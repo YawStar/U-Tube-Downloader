@@ -894,30 +894,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def check_necessary_files(self):
         return self.yt_dlp_service.check_necessary_files()
 
-    def open_dep_downloader_BAK(self):
-        self.dep_window = core.dependency_downloader.MainWindow(parent=self)
-        self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
-        self.dep_window.setWindowModality(Qt.WindowModal)
-        self.dep_window.show()
-
-    def open_dep_downloader_BAK(self):
-        self.dep_window = core.dependency_downloader.MainWindow(parent=self)
-        self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
-        
-        # 1. Blur Overlay ကို အရင်ပြမယ်
-        if hasattr(self, 'blur_overlay'):
-            self.blur_overlay.show_overlay()
-            
-        # 2. Window ကို ပုံမှန်အတိုင်း show() နဲ့ပြမယ် (QMainWindow ဖြစ်လို့ error မတက်တော့ဘူး)
-        self.dep_window.show()
-        
-        # 3. Window ပိတ်သွားတဲ့အခါ Blur ပြန်ဖြုတ်ပေးဖို့ finished signal (သို့မဟုတ် destroyed) ကို ချိတ်မယ်
-        def on_dep_closed():
-            if hasattr(self, 'blur_overlay'):
-                self.blur_overlay.hide_overlay()
-                
-        self.dep_window.destroyed.connect(on_dep_closed)
-
     def open_dep_downloader(self):
         self.dep_window = core.dependency_downloader.MainWindow(parent=self)
         self.dep_window.setAttribute(Qt.WA_DeleteOnClose)
@@ -3408,266 +3384,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # =========================================================================
     # ⬇️ DOWNLOAD
     # =========================================================================
-    def on_download_clicked_BAK(self):
-        """ Download — DownloadController သို့မဟုတ် QueueController ကို delegate """
-        # Tip Rotation ပြတာရပ်
-        self.stop_tips_rotation()
-        
-        # Playlist Queue အလုပ်လုပ်နေရင် Queue ကို ရပ်ရန်
-        if hasattr(self, 'queue_controller') and self.queue_controller.is_running():
-            self.statusbar.showMessage("Playlist download cancelled.")
-            self.queue_controller.stop_queue()
-            self.on_queue_finished()
-            return
-
-        # Single Video Download အလုပ်လုပ်နေရင် Stop download
-        if self.download_controller.is_running():
-            self.statusbar.showMessage(StatusMsg.DOWNLOAD_CANCELLED)
-            self.download_controller.cancel()
-            return
-
-        # Dependencies တွေရှိမရှိ စစ်မယ်
-        dpc_check = window.check_necessary_files()
-        if dpc_check[0] != 0:
-            logger.warning(f"Missing dependencies: {dpc_check[0]}")
-            window.statusbar.showMessage("Need dependencies files...")
-            window.open_dep_downloader()
-
-            loop = QEventLoop()
-            window.dep_window.destroyed.connect(loop.quit)
-            loop.exec()
-
-            dpc_check_after = window.check_necessary_files()
-            if dpc_check_after[0] == 0:
-                window.statusbar.showMessage(StatusMsg.READY)
-            else:
-                window.statusbar.showMessage(
-                    "Dependencies download incomplete or failed!"
-                )
-        else:
-            window.statusbar.showMessage(StatusMsg.READY)
-
-        # URL ရှိမရှိစစ်မယ်
-        url = self.c_urlInput 
-        if not url:
-            self.statusbar.showMessage("Please enter a valid URL.")
-            logger.error("Please enter a valid URL.")
-            return
-        
-        # Config တွေကိုဖတ်မယ်
-        loaded_settings = self.config_mgr.get_all()
-
-        # Awake Mode ဖွင့်ထားမထား ဖတ်မယ်
-        prevent_sleep_while_dloading = loaded_settings.get(
-            ConfigKey.AWAKE_MODE, False
-        )
-
-        # Download Path ကို ဖတ်မယ်
-        download_path_cfg = loaded_settings.get(
-            ConfigKey.DOWNLOAD_PATH,
-            os.path.join(downloads_dir, 'YS U-Tube Downloader')
-        )
-
-        # GUI override
-        embedded_thumbnail = self.embThumbnailButton.isChecked()
-        embedded_chapters = self.embChaptersButton.isChecked()
-        embedded_subtitle = self.embSubtitlesButton.isChecked()
-        embedded_metadata = self.embMetadataButton.isChecked()
-        use_mtime = self.useMTimeButton.isChecked()
-        skip_sponsors_block = self.skipSponsorsButton.isChecked()
-
-        # ရွေးချယ်ထားသော subtitle များကို ဖတ်ယူခြင်း
-        selected_subs = getattr(self, 'selected_subtitles_list', [])
-        sub_langs = []
-        for sub in selected_subs:
-            import re
-            # ကွင်းစကွင်းပိတ် ( ) ထဲတွင် ရှိသော ကုဒ်ကို ရှာရန် (ဥပမာ: (my) သို့မဟုတ် (en) စသည်)
-            match = re.search(r'\(([a-z\-]+)\)', sub)
-            if match:
-                lang_code = match.group(1)
-                if lang_code not in sub_langs:
-                    sub_langs.append(lang_code)
-        
-        print(f"Selected Sub Lang = {sub_langs}")
-        logger.info(f"Selected Sub Langs for yt-dlp: {sub_langs}")
-        
-        # ---------------------------------------------------------
-        # 💡 ဤနေရာတွင် gui_overrides ထဲသို့ sub_langs ကို ထည့်ပေးရန်
-        # ---------------------------------------------------------
-        gui_overrides = {
-            "embed_thumbnail": embedded_thumbnail,
-            "embed_chapters": embedded_chapters,
-            "embed_subtitles": embedded_subtitle,
-            "embed_metadata": embedded_metadata,
-            "use_mtime": use_mtime,
-            "skip_sponsors_block": skip_sponsors_block,
-            "sub_langs": sub_langs,              # 👈 ဤနေရာတွင် ထည့်ပေးပါ
-        }
-        
-
-        # Config မှာထည့်ဖို့ Value တွေပြင်ဆင်
-        updated_data = {
-            ConfigKey.EMBED_THUMBNAIL: embedded_thumbnail,
-            ConfigKey.EMBED_CHAPTERS: embedded_chapters,
-            ConfigKey.EMBED_SUBTITLES: embedded_subtitle,
-            ConfigKey.EMBED_METADATA: embedded_metadata,
-            ConfigKey.USE_MTIME: use_mtime,
-            ConfigKey.SKIP_SPONSORS_BLOCK: skip_sponsors_block,
-        }
-        # Config မှာ Value တွေထည့်သွင်း
-        self.config_mgr.update_multiple(updated_data)
-    
-        # =====================================================================
-        # ✨ Playlist ဖြစ်နေရင် Download ခလုတ်နှိပ်မှသာ Dialog ပြပြီး Queue စတင်မည်
-        # =====================================================================
-        is_playlist = isinstance(self.info, dict) and (self.info.get("_type") == "playlist" or "entries" in self.info)
-        if is_playlist:
-            self.single_video_download = False
-            entries = self.info.get("entries", [])
-            dialog = PlaylistDialog(self.info, parent=self)
-            result = self.show_dialog_with_blur(dialog)
-            
-            if result == QDialog.Accepted:
-                selected_entries = dialog.get_selected_entries()
-                if selected_entries:
-                    # Notification
-                    if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_STARTED):
-                        self.notification_service.send_notification(
-                            "Playlist Download Started",
-                            "Your download has been started."
-                        )
-
-                    # Taskbar
-                    self.taskbar_service.reset()
-                    self.taskbar_service.set_indeterminate()
-                    
-                    # LogOutput ကိုရှင်းပြီး Plain Text ကို ထည့်
-                    self.txtInfoLog.clear()
-                    self.txtInfoLog.insertPlainText(
-                        "✦-------------------- Playlist Download Process Started --------------------✦\n"
-                    )
-
-                    # နောက်ဆုံး စာကြောင်းပေါ်အောင်လုပ်
-                    self.txtInfoLog.ensureCursorVisible()
-
-                    # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
-                    logger.info(f"Playlist Download started: {url}")
-
-                    # Config မှာ Playlist Own Folder ရွေးထားမထား စစ်
-                    put_playlist_their_own_dir = loaded_settings.get("playlist_in_own_folder", False)
-                    if put_playlist_their_own_dir:
-                        playlist_title = self.info.get("title", "Playlist")
-                        # 📁 Windows/Linux Path များတွင် မပါသင့်သော Special Characters များကို ဖယ်ရှားရန် (Sanitize)
-                        safe_playlist_title = re.sub(r'[\\/*?:"<>|]', "", playlist_title).strip()
-                        if not safe_playlist_title:
-                            safe_playlist_title = "Playlist"
-                        channel_name = self.c_uploader
-                        # 📁 Windows/Linux Path များတွင် မပါသင့်သော Special Characters များကို ဖယ်ရှားရန် (Sanitize)
-                        safe_channel_id = re.sub(r'[\\/*?:"<>|]', "", channel_name).strip()
-                        if not safe_channel_id:
-                            safe_channel_id = "Channel_ID"
-                        download_path_cfg = os.path.join(download_path_cfg, f"{safe_channel_id}_{safe_playlist_title}")
-        
-                    # Download Folder ကို မရှိရင် ဖန်တီး
-                    if not os.path.exists(download_path_cfg):
-                        os.makedirs(download_path_cfg)
-                        
-                    # Queue / Download Controller ဆီသို့ Path အသစ်ကို ပို့ပေးရန် Settings ကို Copy ကူးပြီး Update လုပ်မည်
-                    playlist_settings = dict(loaded_settings)
-                    playlist_settings[ConfigKey.DOWNLOAD_PATH] = download_path_cfg
-                    
-                    # Config မှာ Awake mode ကိုသုံးဖို့ရွေးထားရင် Awake Mode ဖွင့်
-                    if prevent_sleep_while_dloading:
-                        self.awake_mode = keep.running()
-                        self.awake_mode.__enter__()
-
-                    self.start_playlist_download_from_entries(selected_entries, playlist_settings)
-
-                else:
-                    self.statusbar.showMessage("No videos selected from playlist.")
-                    self.set_controls_status(UiState.NORMAL)
-            else:
-                self.statusbar.showMessage("Playlist download cancelled.")
-                self.set_controls_status(UiState.NORMAL)
-                self.downloadButton.setText("Download")
-                self.progressBar.setVisible(False)
-                if self.is_marquee:
-                    self.marquee_progressbar(False)
-                    self.is_marquee = False
-
-            return # Playlist ဖြစ်နေလို့ ဆက်မသွားတော့ပဲပြန်
-
-        # =====================================================================
-        # 🎥 Single Video အတွက် Download Logic များ
-        # =====================================================================
-        self.single_video_download = True
-        # UI state
-        self.set_controls_status(UiState.DOWNLOADING) # Control Button တွေကို Downloading State ပြင်
-        self.downloadButton.setText("Stop Download") # Download Button ကို Stop Download စာသားပြောင်း
-        self.progressBar.setValue(0) # Progressbar ရာခိုင်နှုန်းကို 0 ပြောင်း
-        self.statusbar.showMessage(StatusMsg.DOWNLOAD_PREPARING) # Preparing လို့ ပြ
-
-        self.progressBar.setVisible(True) # Progressbar ကို ဖျောက်ထားတာကနေ ပြန်ဖေါ်
-
-        if not self.is_marquee: # Progressbar က Marquee မဟုတ်ရင် Marquee ပုံစံပြောင်း
-            self.marquee_progressbar(True)
-            self.is_marquee = True
-
-        self.downloadButton.setProperty("working", True) # Download Button ရဲ့ Property ကို ပြင်
-        self.downloadButton.style().unpolish(self.downloadButton) # Download Button ကို Unpolish လုပ်
-        self.downloadButton.style().polish(self.downloadButton) # Download Button ကို Polish ပြန်လုပ်
-        self.downloadButton.update() # Download Button ကို Update လုပ်
-            
-        # Config မှာ Start Download လုပ်ရင် Notification ကို ဖွင့်ထားလား စစ်ပြီး လုပ်ဆောင်
-        if loaded_settings.get(ConfigKey.NOTIFY_DOWNLOAD_STARTED):
-            self.notification_service.send_notification(
-                "Download Started",
-                "Your download has been started."
-            )
-
-        # Taskbar
-        self.taskbar_service.reset()
-        self.taskbar_service.set_indeterminate()
-
-        # LogOutput ကိုရှင်းပြီး Plain Text ကို ထည့်
-        self.txtInfoLog.clear()
-        self.txtInfoLog.insertPlainText(
-            "✦-------------------- Download Process Started "
-            "--------------------✦\n"
-        )
-        # Cursor ကိုဖျောက်
-        self.txtInfoLog.ensureCursorVisible()
-
-        # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
-        logger.info(f"Download started: {url}")
-        
-        # Download Folder ကို မရှိရင် ဖန်တီး
-        if not os.path.exists(download_path_cfg):
-            os.makedirs(download_path_cfg)
-
-        # Config မှာ Awake mode ကိုသုံးဖို့ရွေးထားရင် Awake Mode ဖွင့်
-        if prevent_sleep_while_dloading:
-            self.awake_mode = keep.running()
-            self.awake_mode.__enter__()
-
-        gui_overrides = {
-            "embed_thumbnail": embedded_thumbnail,
-            "embed_chapters": embedded_chapters,
-            "embed_subtitles": embedded_subtitle,
-            "embed_metadata": embedded_metadata,
-            "use_mtime": use_mtime,
-            "skip_sponsors_block": skip_sponsors_block,
-        }
-
-        # Controller start
-        self.download_controller.start(
-            url=url,
-            settings=loaded_settings,
-            selected_format_id=self.selected_format_id,
-            gui_overrides=gui_overrides,
-            is_windows=(CURRENT_OS == "Windows"),
-        )
-
     def on_download_clicked(self):
         """ Download — DownloadController သို့မဟုတ် QueueController ကို delegate """
         # Tip Rotation ပြတာရပ်
@@ -3740,8 +3456,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         selected_subs = getattr(self, 'selected_subtitles_list', [])
         sub_langs = []
         for sub in selected_subs:
-            import re
             # ကွင်းစကွင်းပိတ် ( ) ထဲတွင် ရှိသော ကုဒ်ကို ရှာရန် (ဥပမာ: (my) သို့မဟုတ် (en) စသည်)
+            # ❌ import re ကို ဒီနေရာမှာ မလုပ်ရပါဘူး (ထိပ်ဆုံးမှာ လုပ်ထားပြီးသား)
             match = re.search(r'\(([a-z\-]+)\)', sub)
             if match:
                 lang_code = match.group(1)
@@ -3763,7 +3479,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "sub_langs": sub_langs,
         }
         
-
         # Config မှာထည့်ဖို့ Value တွေပြင်ဆင်
         updated_data = {
             ConfigKey.EMBED_THUMBNAIL: embedded_thumbnail,
@@ -3775,7 +3490,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         }
         # Config မှာ Value တွေထည့်သွင်း
         self.config_mgr.update_multiple(updated_data)
-    
+
         # =====================================================================
         # ✨ Playlist ဖြစ်နေရင် Download ခလုတ်နှိပ်မှသာ Dialog ပြပြီး Queue စတင်မည်
         # =====================================================================
@@ -3805,8 +3520,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.txtInfoLog.insertPlainText(
                         "✦-------------------- Playlist Download Process Started --------------------✦\n"
                     )
-
-                    # နောက်ဆုံး စာကြောင်းပေါ်အောင်လုပ်
                     self.txtInfoLog.ensureCursorVisible()
 
                     # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
@@ -3820,16 +3533,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         safe_playlist_title = re.sub(r'[\\/*?:"<>|]', "", playlist_title).strip()
                         if not safe_playlist_title:
                             safe_playlist_title = "Playlist"
-                        channel_name = self.c_uploader
+                            
+                        # channel_name က None ဖြစ်နေရင် Error မတက်အောင် စစ်ဆေးခြင်း
+                        channel_name = self.c_uploader if getattr(self, 'c_uploader', None) else "Channel"
                         # 📁 Windows/Linux Path များတွင် မပါသင့်သော Special Characters များကို ဖယ်ရှားရန် (Sanitize)
                         safe_channel_id = re.sub(r'[\\/*?:"<>|]', "", channel_name).strip()
                         if not safe_channel_id:
                             safe_channel_id = "Channel_ID"
+                            
                         download_path_cfg = os.path.join(download_path_cfg, f"{safe_channel_id}_{safe_playlist_title}")
         
-                    # Download Folder ကို မရှိရင် ဖန်တီး
+                    # Download Folder ကို မရှိရင် ဖန်တီး (Error Handling ပါဝင်သည်)
                     if not os.path.exists(download_path_cfg):
-                        os.makedirs(download_path_cfg)
+                        try:
+                            os.makedirs(download_path_cfg)
+                        except OSError as e:
+                            logger.error(f"Failed to create directory {download_path_cfg}: {e}")
+                            self.statusbar.showMessage("Error: Could not create download folder. Check permissions.")
+                            self.set_controls_status(UiState.NORMAL)
+                            self.downloadButton.setText("Download")
+                            self.progressBar.setVisible(False)
+                            if self.is_marquee:
+                                self.marquee_progressbar(False)
+                                self.is_marquee = False
+                            return # Folder မဆောက်နိုင်ရင် ဆက်မလုပ်တော့ဘူး
                         
                     # Queue / Download Controller ဆီသို့ Path အသစ်ကို ပို့ပေးရန် Settings ကို Copy ကူးပြီး Update လုပ်မည်
                     playlist_settings = dict(loaded_settings)
@@ -3840,7 +3567,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.awake_mode = keep.running()
                         self.awake_mode.__enter__()
 
-                    self.start_playlist_download_from_entries(selected_entries, playlist_settings)
+                    # Download စတင်ခြင်း (Error Handling ပါဝင်သည်)
+                    try:
+                        self.start_playlist_download_from_entries(selected_entries, playlist_settings)
+                    except Exception as e:
+                        logger.error(f"Failed to start playlist download: {e}")
+                        self.statusbar.showMessage("Error starting playlist download.")
+                        self.set_controls_status(UiState.NORMAL)
+                        self.downloadButton.setText("Download")
+                        self.progressBar.setVisible(False)
+                        if self.is_marquee:
+                            self.marquee_progressbar(False)
+                            self.is_marquee = False
+                        # Error တက်ရင် Awake Mode ကို ပြန်ပိတ်ပေးရမယ်
+                        if prevent_sleep_while_dloading and hasattr(self, 'awake_mode') and self.awake_mode:
+                            try:
+                                self.awake_mode.__exit__(None, None, None)
+                            except Exception as awake_err:
+                                logger.error(f"Failed to exit awake mode: {awake_err}")
 
                 else:
                     self.statusbar.showMessage("No videos selected from playlist.")
@@ -3894,39 +3638,57 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "✦-------------------- Download Process Started "
             "--------------------✦\n"
         )
-        # Cursor ကိုဖျောက်
+        # Cursor ကိုမြင်ရအောင် လုပ်ပြီး Scroll ကို အောက်ဆုံးရောက်အောင်လုပ်
         self.txtInfoLog.ensureCursorVisible()
 
         # Download လုပ်မယ့် Url ကို log ထုတ်ပေး
         logger.info(f"Download started: {url}")
         
-        # Download Folder ကို မရှိရင် ဖန်တီး
+        # Download Folder ကို မရှိရင် ဖန်တီး (Error Handling ပါဝင်သည်)
         if not os.path.exists(download_path_cfg):
-            os.makedirs(download_path_cfg)
+            try:
+                os.makedirs(download_path_cfg)
+            except OSError as e:
+                logger.error(f"Failed to create directory {download_path_cfg}: {e}")
+                self.statusbar.showMessage("Error: Could not create download folder. Check permissions.")
+                # UI ကို Normal ပြန်ထားမယ်
+                self.set_controls_status(UiState.NORMAL)
+                self.downloadButton.setText("Download")
+                self.progressBar.setVisible(False)
+                if self.is_marquee:
+                    self.marquee_progressbar(False)
+                    self.is_marquee = False
+                return # Folder မဆောက်နိုင်ရင် ဆက်မလုပ်တော့ဘူး
 
         # Config မှာ Awake mode ကိုသုံးဖို့ရွေးထားရင် Awake Mode ဖွင့်
         if prevent_sleep_while_dloading:
             self.awake_mode = keep.running()
             self.awake_mode.__enter__()
 
-        gui_overrides = {
-            "embed_thumbnail": embedded_thumbnail,
-            "embed_chapters": embedded_chapters,
-            "embed_subtitles": embedded_subtitle,
-            "embed_metadata": embedded_metadata,
-            "use_mtime": use_mtime,
-            "skip_sponsors_block": skip_sponsors_block,
-            "sub_langs": sub_langs,          # 👈 ဤနေရာတွင် Single Video အတွက် sub_langs ကို ထည့်သွင်းပေးထားပါသည်
-        }
-
         # Controller start
-        self.download_controller.start(
-            url=url,
-            settings=loaded_settings,
-            selected_format_id=self.selected_format_id,
-            gui_overrides=gui_overrides,
-            is_windows=(CURRENT_OS == "Windows"),
-        )
+        try:
+            self.download_controller.start(
+                url=url,
+                settings=loaded_settings,
+                selected_format_id=self.selected_format_id,
+                gui_overrides=gui_overrides,
+                is_windows=(CURRENT_OS == "Windows"),
+            )
+        except Exception as e:
+            logger.error(f"Failed to start single video download: {e}")
+            self.statusbar.showMessage("Error starting download.")
+            self.set_controls_status(UiState.NORMAL)
+            self.downloadButton.setText("Download")
+            self.progressBar.setVisible(False)
+            if self.is_marquee:
+                self.marquee_progressbar(False)
+                self.is_marquee = False
+            # Error တက်ရင် Awake Mode ကို ပြန်ပိတ်ပေးရမယ်
+            if prevent_sleep_while_dloading and hasattr(self, 'awake_mode') and self.awake_mode:
+                try:
+                    self.awake_mode.__exit__(None, None, None)
+                except Exception as awake_err:
+                    logger.error(f"Failed to exit awake mode: {awake_err}")
 
     # =========================================================================
     # ✨ Phase 4 — OPEN FOLDER (FileOpenerService ကို delegate)
@@ -4198,28 +3960,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 exe_path = os.path.join(app_dir, exe_name)
                 
                 batch_content = f"""@echo off
-setlocal
-echo Waiting for application to close...
-timeout /t 2 /nobreak > nul
+                setlocal
+                echo Waiting for application to close...
+                timeout /t 2 /nobreak > nul
 
-echo Extracting update...
-powershell -Command "Expand-Archive -Path '{zip_path}' -DestinationPath '{app_dir}' -Force"
+                echo Extracting update...
+                powershell -Command "Expand-Archive -Path '{zip_path}' -DestinationPath '{app_dir}' -Force"
 
-if %errorlevel% neq 0 (
-    echo Update extraction failed!
-    pause
-    exit /b %errorlevel%
-)
+                if %errorlevel% neq 0 (
+                    echo Update extraction failed!
+                    pause
+                    exit /b %errorlevel%
+                )
 
-echo Cleaning up...
-del /f /q "{zip_path}"
+                echo Cleaning up...
+                del /f /q "{zip_path}"
 
-echo Starting updated application...
-start "" "{exe_path}"
+                echo Starting updated application...
+                start "" "{exe_path}"
 
-del "%~f0"
-exit
-"""
+                del "%~f0"
+                exit
+                """
                 with open(script_path, "w") as f:
                     f.write(batch_content)
 
@@ -4230,23 +3992,23 @@ exit
                 exe_path = os.path.join(app_dir, exe_name)
                 
                 sh_content = f"""#!/bin/bash
-sleep 2
-echo "Extracting update..."
-unzip -o "{zip_path}" -d "{app_dir}"
+                    sleep 2
+                    echo "Extracting update..."
+                    unzip -o "{zip_path}" -d "{app_dir}"
 
-if [ $? -ne 0 ]; then
-    echo "Update extraction failed!"
-    exit 1
-fi
+                    if [ $? -ne 0 ]; then
+                        echo "Update extraction failed!"
+                        exit 1
+                    fi
 
-echo "Cleaning up..."
-rm -f "{zip_path}"
+                    echo "Cleaning up..."
+                    rm -f "{zip_path}"
 
-echo "Starting updated application..."
-"{exe_path}" &
+                    echo "Starting updated application..."
+                    "{exe_path}" &
 
-rm -- "$0"
-"""
+                    rm -- "$0"
+                    """
                 with open(script_path, "w") as f:
                     f.write(sh_content)
 
@@ -4403,6 +4165,18 @@ rm -- "$0"
     def reset_video_info_ui(self):
         """ Fetch မလုပ်မီ သို့မဟုတ် Link အသစ်ရောက်ချိန်တွင် UI ကို Initial State သို့ ပြန်ပြောင်း """
         self.c_urlInput = None
+        
+        # =======================================================
+        # Subtitle ရွေးချယ်မှုများကို Reset လုပ်
+        # =======================================================
+        self.saved_selected_subtitles = []
+        if hasattr(self, 'selected_subtitles_list'):
+            self.selected_subtitles_list = []
+        
+        # Subtitle ခလုတ် (Checkbox) ကို ပုံမှန်အတိုင်း ပြန်ထား
+        if hasattr(self, 'embSubtitlesButton'):
+            self.embSubtitlesButton.setChecked(False)
+
         # 1. Title, Duration, Chapters, Uploader, Upload Date Label များကို ရှင်းထုတ်ခြင်း
         self.urlInput.setText("")
         self.lblTitle.setText("")
